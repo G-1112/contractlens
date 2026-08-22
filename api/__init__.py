@@ -1,0 +1,3 @@
+"""契约眼（ContractLens）后端包。"""
+
+__version__ = "0.1.0"
