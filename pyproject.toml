@@ -1,0 +1,53 @@
+[project]
+name = "contractlens"
+version = "0.1.0"
+description = "契约眼 — 合同条款风险审查流水线（解析 → 规则/LLM 双引擎判定 → 可视化 → 修订稿）"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.5",
+    "pdfplumber>=0.11",
+    "python-docx>=1.1",
+    "pypdf>=4.3",
+    "PyYAML>=6.0",
+    "openai>=1.40",
+    "jinja2>=3.1",
+    "weasyprint>=62.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+# 可选：本地向量库（Chroma）+ 中文 embedding，离线可用；不安装则回退到纯 Python 检索器
+vectordb = [
+    "chromadb>=0.5",
+    "sentence-transformers>=2.7",
+]
+# 可选：本地 embedding 需要的底层依赖（部分平台需要手动安装 torch）
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["api"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501"]
