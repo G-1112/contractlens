@@ -1,0 +1,186 @@
+# 实习协议规则库（intern.yaml）
+
+rules:
+  # ---------------- 实习报酬 ----------------
+  - id: I02
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["无报酬", "不支付报酬", "无偿实习", "自费实习", "零工资", "无工资"]
+    explanation: 实习无任何报酬，属于对实习生的不合理压榨。
+
+  - id: I13
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["低于最低工资", "低于当地最低", "报酬低于"]
+    explanation: 实习报酬低于当地最低工资标准，涉嫌违法。
+
+  - id: I17
+    level: 高
+    risk_type: 押金
+    detect: keyword
+    keywords: ["收取押金", "保证金", "缴纳培训费", "实习押金", "收取费用"]
+    explanation: 以实习名义收取押金、保证金或培训费，属于违规收费。
+
+  - id: I25
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["报酬", "工资", "补贴", "实习补贴", "待遇"]
+    explanation: 未约定实习报酬或补贴标准与构成。
+
+  - id: I20
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["支付", "发放", "报酬支付", "补贴发放"]
+    explanation: 未约定实习报酬/补贴的支付时间与方式。
+
+  - id: I09
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["食宿", "餐饮", "住宿", "补贴"]
+    explanation: 未约定食宿与补贴安排。
+
+  # ---------------- 实习期限 / 工时 ----------------
+  - id: I01
+    level: 中
+    risk_type: 其他
+    detect: threshold
+    anchor: 实习期
+    unit: 个月
+    operator: gt
+    threshold: 12
+    ratio: false
+    explanation: 实习期超过一年，超出合理实习期限。
+
+  - id: I07
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["实习期", "实习期限", "实习时间", "个月", "周", "年"]
+    explanation: 未约定实习期限，实习结束时间不明确。
+
+  - id: I15
+    level: 中
+    risk_type: 其他
+    detect: threshold
+    anchor: 工时
+    unit: 元
+    operator: gt
+    threshold: 8
+    ratio: false
+    explanation: 实习每日工时可核对是否超过法定标准（每日不超过 8 小时）。
+
+  - id: I22
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["休息", "休假", "假期", "休息时间"]
+    explanation: 未约定实习期间的休息休假权利。
+
+  # ---------------- 实习内容 ----------------
+  - id: I03
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["实习内容", "岗位", "职责", "工作内容", "培养"]
+    explanation: 未约定实习内容与岗位，可能被安排与专业无关的杂活。
+
+  - id: I23
+    level: 低
+    risk_type: 其他
+    detect: keyword
+    keywords: ["与专业无关", "服从一切安排", "无条件接受岗位", "安排任何工作"]
+    explanation: 实习内容与专业无关或要求无条件服从安排，实习价值存疑。
+
+  - id: I14
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["考核", "评价", "鉴定", "实习证明", "表现"]
+    explanation: 未约定实习考核标准与评价机制。
+
+  - id: I24
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["实习证明", "实习鉴定", "证明材料", "实习评价"]
+    explanation: 未约定实习结束后出具实习证明/鉴定。
+
+  - id: I19
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["实习地点", "工作地点", "地址"]
+    explanation: 未约定实习地点。
+
+  # ---------------- 安全 / 保险 ----------------
+  - id: I06
+    level: 高
+    risk_type: 其他
+    detect: missing
+    must_contain: ["保险", "意外险", "工伤保险", "人身意外"]
+    explanation: 未约定实习期间的意外伤害保险，实习生安全保障缺失。
+
+  - id: I16
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["安全", "培训", "安全教育", "劳动保护", "防护"]
+    explanation: 未约定安全培训与劳动保护措施。
+
+  - id: I21
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["放弃工伤", "不承担工伤", "工伤概不负责", "意外自负", "责任自负"]
+    explanation: 要求放弃工伤认定或约定事故责任自负，属无效的免责条款。
+
+  # ---------------- 知识产权 / 保密 ----------------
+  - id: I05
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["知识产权归单位", "成果归甲方所有", "发明创造归单位", "全部知识产权归属"]
+    negate: ["经协商", "奖励", "署名"]
+    explanation: 实习成果知识产权全部归单位，未约定实习生署名或奖励，需明确归属。
+
+  - id: I12
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["保密", "知识产权", "成果归属"]
+    explanation: 未约定保密与知识产权归属条款。
+
+  # ---------------- 解除 / 转正 ----------------
+  - id: I08
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["必须留任", "实习期满必须留任", "不得提前离开", "必须转正"]
+    explanation: 要求实习期满必须留任或不得提前离开，限制实习生自由选择权。
+
+  - id: I10
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["单方解除", "随时解除", "任意解除", "可立即解除"]
+    negate: ["违反规定", "严重违反", "造成损失"]
+    explanation: 单位单方随意解除实习协议，实习生缺乏程序保障。
+
+  - id: I18
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["转正条件", "表现优秀可转正", "视表现转正"]
+    explanation: 转正条件含糊，以"表现优秀"等模糊标准留出任意操作空间。
+
+  - id: I11
+    level: 中
+    risk_type: 违约金
+    detect: keyword
+    keywords: ["违约金", "赔偿金", "提前离开赔偿"]
+    explanation: 实习协议约定违约金，需核对是否合理，实习生一般不应承担高额违约金。

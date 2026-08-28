@@ -1,0 +1,208 @@
+# 房屋租赁合同规则库（rent.yaml）
+# detect 三类：keyword 关键词匹配 / threshold 数值阈值 / missing 缺失检测（文档级）
+# level：高 / 中 / 低
+
+rules:
+  # ---------------- 押金 ----------------
+  - id: R01
+    level: 高
+    risk_type: 押金
+    detect: threshold
+    anchor: 押金
+    unit: 个月
+    operator: gt
+    threshold: 2
+    ratio: false
+    explanation: 押金超过两个月租金，明显高于市场惯例，退还风险高。
+
+  - id: R02
+    level: 高
+    risk_type: 押金
+    detect: keyword
+    keywords: ["押金概不退还", "押金不退", "押金不予退还", "押金一律不退"]
+    explanation: 出现"押金概不退还"等绝对化表述，剥夺租客正当取回押金的权利。
+
+  - id: R09
+    level: 中
+    risk_type: 押金
+    detect: keyword
+    keywords: ["押金扣除", "押金中扣除", "扣押金", "押金作为违约金"]
+    negate: ["经双方确认", "经租客确认", "双方协商"]
+    explanation: 押金扣除条件含糊，房东单方认定即可扣款，易被滥扣。
+
+  - id: R17
+    level: 高
+    risk_type: 押金
+    detect: keyword
+    keywords: ["延迟退租押金全扣", "提前退租押金不退", "退租押金全额扣除"]
+    explanation: 以"提前退租"为由全额没收押金，超出合理违约范围。
+
+  - id: R26
+    level: 中
+    risk_type: 押金
+    detect: missing
+    must_contain: ["退还押金", "押金退还", "返还押金", "退回押金"]
+    explanation: 未约定押金退还时间与条件，退租后押金何时返还无依据。
+
+  - id: R24
+    level: 中
+    risk_type: 押金
+    detect: keyword
+    keywords: ["押金抵扣一切损失", "押金抵扣所有费用", "甲方有权自行从押金扣除"]
+    explanation: 押金抵扣范围过宽，房东可单方任意扣减，租客无法监督。
+
+  # ---------------- 涨租 ----------------
+  - id: R03
+    level: 高
+    risk_type: 涨租
+    detect: keyword
+    keywords: ["单方涨租", "单方面提高租金", "甲方有权调整租金", "甲方可随时调整租金"]
+    negate: ["经双方协商", "经租客同意", "经乙方同意"]
+    explanation: 房东可单方涨租且无上限约定，租期成本不可控。
+
+  - id: R19
+    level: 高
+    risk_type: 涨租
+    detect: keyword
+    keywords: ["租金涨幅不受限制", "租金上浮幅度由甲方决定", "甲方有权单方确定租金"]
+    explanation: 租金调整权完全在房东，缺少涨幅上限与协商机制。
+
+  # ---------------- 解约 / 违约金 ----------------
+  - id: R04
+    level: 中
+    risk_type: 解约
+    detect: threshold
+    anchor: 违约金
+    unit: 个月
+    operator: gt
+    threshold: 1
+    ratio: false
+    explanation: 提前解约违约金超过一个月租金，偏高。
+
+  - id: R23
+    level: 高
+    risk_type: 违约金
+    detect: threshold
+    anchor: 违约金
+    unit: 个月
+    operator: ge
+    threshold: 3
+    ratio: false
+    explanation: 违约金高达三个月租金以上，显著超出合理范围。
+
+  - id: R13
+    level: 高
+    risk_type: 解约
+    detect: keyword
+    keywords: ["甲方有权单方解除", "甲方可随时解除", "甲方有权任意解除"]
+    negate: ["乙方违约", "租客违约", "欠租"]
+    explanation: 房东无需租客违约即可单方解除合同，租客居住权无保障。
+
+  - id: R12
+    level: 中
+    risk_type: 违约金
+    detect: keyword
+    keywords: ["逾期交租每日违约金", "滞纳金", "逾期一天扣", "按日加收"]
+    explanation: 逾期交租的日违约金/滞纳金条款需核对费率是否过高。
+
+  # ---------------- 维修责任 ----------------
+  - id: R05
+    level: 中
+    risk_type: 维修责任
+    detect: missing
+    must_contain: ["维修", "修缮", "维护", "修理", "保养"]
+    explanation: 未约定维修责任主体，房屋设施损坏后责任不清。
+
+  - id: R20
+    level: 中
+    risk_type: 维修责任
+    detect: keyword
+    keywords: ["维修费用由乙方承担", "维修由租客自行负责", "一切维修费用乙方承担"]
+    negate: ["因乙方原因", "因租客使用不当", "人为损坏"]
+    explanation: 自然损耗的维修费用也转嫁给租客，属加重租客责任条款。
+
+  - id: R21
+    level: 低
+    risk_type: 维修责任
+    detect: missing
+    must_contain: ["维修", "修缮"]
+    explanation: 未约定房屋维修的响应时限，报修后无时限约束。
+
+  # ---------------- 交付标准 / 租金包含项 ----------------
+  - id: R06
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["水费", "电费", "燃气费", "物业费", "网络", "暖气"]
+    explanation: 未明确租金包含项（水电网物业等），后续费用承担易起纠纷。
+
+  - id: R07
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["家具", "家电", "清单", "交付", "交接", "设备"]
+    explanation: 未约定交付标准与家具家电清单，退租时物品责任不清。
+
+  - id: R14
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["水电", "燃气", "计量", "抄表", "表底"]
+    explanation: 未约定水电气计量方式与初始读数，费用分摊无据。
+
+  # ---------------- 转租 / 其他 ----------------
+  - id: R08
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["转租", "转借", "变更承租人"]
+    explanation: 转租需书面同意的条款缺失，转租权利不明确。
+
+  - id: R10
+    level: 中
+    risk_type: 隐私
+    detect: keyword
+    keywords: ["甲方可随时进入", "甲方有权随时查看房屋", "无需通知进入", "随时带人看房"]
+    explanation: 房东可随意进入房屋，侵犯租客居住安宁与隐私。
+
+  - id: R15
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["用途", "居住", "商用", "不得"]
+    explanation: 未约定房屋用途限制，可能产生合规与转租风险。
+
+  - id: R16
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["租赁期限", "租期", "租赁期间", "年", "个月"]
+    explanation: 未明确约定租赁期限，合同期限不清晰。
+
+  - id: R18
+    level: 低
+    risk_type: 解约
+    detect: missing
+    must_contain: ["提前", "通知", "书面通知", "解除"]
+    explanation: 未约定提前解约的通知期限与程序。
+
+  - id: R22
+    level: 低
+    risk_type: 押金
+    detect: missing
+    must_contain: ["装修", "改造", "装饰"]
+    explanation: 未约定装修/改造的规则与装修押金，退租时易起纠纷。
+
+  - id: R25
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["续租", "优先", "续约", "到期后"]
+    explanation: 未约定续租优先权，租期届满后可能被动搬离。
+
+  - id: R27
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["甲方不承担任何责任", "甲方概不负责", "一切责任由乙方承担"]
+    explanation: 免责条款过宽，房东免除其应尽的法定责任。

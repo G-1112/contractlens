@@ -1,0 +1,193 @@
+# 劳动合同规则库（labor.yaml）
+
+rules:
+  # ---------------- 试用期 ----------------
+  - id: L01
+    level: 高
+    risk_type: 试用期
+    detect: threshold
+    anchor: 试用期
+    unit: 个月
+    operator: gt
+    threshold: 6
+    ratio: false
+    explanation: 试用期超过六个月，超出法定上限，条款无效。
+
+  - id: L02
+    level: 高
+    risk_type: 试用期
+    detect: keyword
+    keywords: ["试用期工资低于", "试用期工资为百分之", "试用期工资为 80%", "试用期不支付工资"]
+    explanation: 试用期工资低于转正工资 80% 或低于当地最低工资，违反法定标准。
+
+  - id: L15
+    level: 高
+    risk_type: 试用期
+    detect: keyword
+    keywords: ["试用期不缴纳社保", "试用期不缴社保", "试用期内不缴纳社会保险", "转正后缴纳社保"]
+    explanation: 试用期不缴纳社保，违反社会保险法，试用期属劳动关系存续期间。
+
+  - id: L21
+    level: 高
+    risk_type: 试用期
+    detect: keyword
+    keywords: ["试用期可随时解除", "试用期内可任意辞退", "试用期不合格即可解除"]
+    negate: ["证明不符合录用条件", "考核不合格"]
+    explanation: 试用期随意解除合同而不说明录用条件，剥夺劳动者救济权利。
+
+  # ---------------- 工资 ----------------
+  - id: L03
+    level: 高
+    risk_type: 工资
+    detect: missing
+    must_contain: ["工资", "薪酬", "报酬", "薪资", "待遇"]
+    explanation: 未约定工资标准与构成，劳动报酬无明确依据。
+
+  - id: L18
+    level: 中
+    risk_type: 工资
+    detect: missing
+    must_contain: ["支付", "发放", "工资支付", "按月"]
+    explanation: 未约定工资支付时间，存在拖欠风险。
+
+  - id: L11
+    level: 中
+    risk_type: 工资
+    detect: missing
+    must_contain: ["加班", "加班费", "延长工时"]
+    explanation: 未约定加班费标准，加班报酬无依据。
+
+  - id: L17
+    level: 中
+    risk_type: 工资
+    detect: threshold
+    anchor: 罚款
+    unit: 元
+    operator: gt
+    threshold: 500
+    ratio: false
+    explanation: 迟到/违纪罚款金额过高，企业无权随意设定高额罚款。
+
+  # ---------------- 社保 / 福利 ----------------
+  - id: L04
+    level: 高
+    risk_type: 其他
+    detect: missing
+    must_contain: ["社会保险", "社保", "五险", "公积金"]
+    explanation: 未约定缴纳社会保险与公积金，属法定强制义务，必须明确。
+
+  - id: L19
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["年假", "带薪年假", "休假", "假期"]
+    explanation: 未约定带薪年假等休息休假权利。
+
+  # ---------------- 合同期限 / 内容 ----------------
+  - id: L05
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["期限", "合同期", "固定期限", "无固定期限", "年", "月"]
+    explanation: 未约定劳动合同期限，劳动关系存续期不明确。
+
+  - id: L22
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["工作内容", "岗位", "职责", "职务"]
+    explanation: 未约定工作内容与岗位职责，存在随意调岗空间。
+
+  - id: L09
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["工作地点", "工作地", "办公地点", "工作地址"]
+    explanation: 未约定工作地点，可能被单方异地调动。
+
+  - id: L24
+    level: 低
+    risk_type: 其他
+    detect: missing
+    must_contain: ["合同一式", "持有一份", "各执一份", "两份"]
+    explanation: 未约定合同份数与劳动者持有一份，劳动者可能拿不到合同文本。
+
+  # ---------------- 竞业限制 / 保密 / 违约金 ----------------
+  - id: L06
+    level: 高
+    risk_type: 竞业限制
+    detect: keyword
+    keywords: ["竞业限制", "竞业禁止"]
+    negate: ["经济补偿", "补偿金", "竞业补偿"]
+    explanation: 竞业限制条款未约定经济补偿，或补偿标准不明确，可能无效或被滥用。
+
+  - id: L07
+    level: 高
+    risk_type: 违约金
+    detect: keyword
+    keywords: ["违约金", "赔偿金", "服务期"]
+    negate: ["专项培训", "培训费用", "竞业限制", "保密"]
+    explanation: 除专项培训服务期与竞业限制外，法律禁止约定劳动者承担违约金。
+
+  - id: L23
+    level: 高
+    risk_type: 违约金
+    detect: threshold
+    anchor: 违约金
+    unit: 元
+    operator: gt
+    threshold: 100000
+    ratio: false
+    explanation: 违约金金额过高，超出合理范围，可能无效。
+
+  - id: L14
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["保密义务", "保密协议", "保密条款"]
+    negate: ["保密费", "保密补偿", "范围", "具体"]
+    explanation: 保密条款范围过宽或未明确保密范围，可能过度限制劳动者。
+
+  - id: L20
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["收取押金", "要求提供担保", "收取保证金", "扣押证件", "押金"]
+    explanation: 用人单位要求劳动者提供担保、押金或扣押证件，属法律明文禁止。
+
+  # ---------------- 解除 / 调岗 ----------------
+  - id: L08
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["单方调岗", "可随时调整岗位", "甲方有权调整岗位", "无条件服从调岗"]
+    negate: ["经协商", "经乙方同意", "经劳动者同意"]
+    explanation: 用人单位单方调岗且无协商机制，可能变相变更劳动合同核心条款。
+
+  - id: L12
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["解除", "终止", "解除合同", "终止合同"]
+    explanation: 未约定劳动合同解除与终止的条件和程序。
+
+  - id: L25
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["职业危害", "劳动保护", "安全生产", "职业病", "劳动条件"]
+    explanation: 未约定劳动保护、劳动条件与职业危害告知义务。
+
+  - id: L13
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["休息", "工时", "工作时间", "每周"]
+    explanation: 未约定工作与休息时间，存在超时加班风险。
+
+  - id: L16
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["自愿放弃社保", "放弃缴纳社保", "不缴社保", "自愿放弃公积金"]
+    explanation: 约定"自愿放弃社保"的条款违反强制性规定，无效且用人单位仍需担责。
