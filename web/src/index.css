@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+}
+
+/* 条款高亮（按风险等级） */
+.clause-high {
+  @apply bg-red-100 text-red-900 border-l-4 border-red-500;
+}
+.clause-mid {
+  @apply bg-amber-50 text-amber-900 border-l-4 border-amber-500;
+}
+.clause-low {
+  @apply bg-blue-50 text-blue-900 border-l-4 border-blue-500;
+}
+.clause-selected {
+  @apply ring-2 ring-brand-500 ring-offset-1;
+}
+
+/* 轻量滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
