@@ -72,6 +72,7 @@ class LlmJudgement(BaseModel):
     suggest: str = ""  # 可执行的修改建议
     rewrite: str = ""  # 修改后的条款原文
     evidence: str = ""  # 引用条款原文
+    injection_suspected: bool = False  # 条款文本疑似含 Prompt 注入
 
 
 class RiskItem(BaseModel):
@@ -83,6 +84,7 @@ class RiskItem(BaseModel):
     final_level: RiskLevel = "无"
     source: Literal["both", "rule_override", "llm_only", "rule_only"] = "llm_only"
     needs_review: bool = False  # rule_override 时标记"需复核"
+    injection_suspected: bool = False  # 条款文本疑似含 Prompt 注入，强制提示复核
     risk_type: str = ""
     explain: str = ""
     suggest: str = ""
@@ -107,6 +109,7 @@ class AnalysisReport(BaseModel):
     radar_dimensions: list[str] = Field(default_factory=list)
     items: list[RiskItem] = Field(default_factory=list)
     talk_scripts: list[str] = Field(default_factory=list)
+    injection_flagged: bool = False  # 任一条款疑似 Prompt 注入（安全创新点 R-INJ-01）
     clause_count: int = 0
     risk_counts: dict[str, int] = Field(
         default_factory=lambda: {"高": 0, "中": 0, "低": 0, "无": 0}

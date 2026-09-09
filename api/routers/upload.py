@@ -21,6 +21,27 @@ router = APIRouter(prefix="/api", tags=["upload"])
 _ALLOWED = {".pdf", ".docx", ".doc"}
 
 
+async def stream_read_limited(file: UploadFile, max_bytes: int) -> bytes:
+    """流式读取上传体，累计超过 max_bytes 立即抛 413 中断。
+
+    避免先把整个请求体（可能数 GB）读满内存再校验大小。
+    """
+    chunks: list[bytes] = []
+    total = 0
+    while True:
+        chunk = await file.read(1024 * 1024)  # 1MB/块
+        if not chunk:
+            break
+        total += len(chunk)
+        if total > max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"文件超过 {max_bytes // (1024 * 1024)}MB 上限",
+            )
+        chunks.append(chunk)
+    return b"".join(chunks)
+
+
 def _probe(path: Path, suffix: str) -> tuple[bool, int]:
     """轻量探测：返回 (has_text_layer, page_count)。"""
     if suffix == ".pdf":
@@ -49,12 +70,8 @@ async def upload(
     if suffix not in _ALLOWED:
         raise HTTPException(status_code=415, detail=f"仅支持 PDF/DOCX，收到：{suffix}")
 
-    data = await file.read()
-    if len(data) > settings.max_upload_bytes:
-        raise HTTPException(
-            status_code=413,
-            detail=f"文件超过 {settings.max_upload_bytes // (1024 * 1024)}MB 上限",
-        )
+    # 流式读取：分块累加，一旦超过上限立即 413 中断，避免先把 5GB 请求体读满内存
+    data = await stream_read_limited(file, settings.max_upload_bytes)
     if not data:
         raise HTTPException(status_code=400, detail="空文件")
 

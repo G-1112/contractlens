@@ -121,6 +121,8 @@ def score_report(
     for item in items:
         risk_counts[item.final_level] = risk_counts.get(item.final_level, 0) + 1
 
+    injection_flagged = any(getattr(item, "injection_suspected", False) for item in items)
+
     return AnalysisReport(
         file_id=file_id,
         contract_type=contract_type,  # type: ignore[arg-type]
@@ -130,6 +132,7 @@ def score_report(
         radar_dimensions=dims,
         items=items,
         talk_scripts=talk_scripts,
+        injection_flagged=injection_flagged,
         clause_count=clause_count,
         risk_counts=risk_counts,
     )

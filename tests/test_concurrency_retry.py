@@ -52,8 +52,8 @@ class _FakeCompletions:
         if self._behavior == "ok":
             return _ok(_Resp('{"risk_level": "无"}'))
         if self._behavior == "bad":
-            # 非法 risk_level → pydantic ValidationError（确定性错误）
-            return _ok(_Resp('{"risk_level": "未知等级"}'))
+            # 不可解析的响应体（确定性错误，重试无意义）
+            return _ok(_Resp("{这不是合法 JSON"))
         return _raise(RuntimeError("connection reset"))
 
 

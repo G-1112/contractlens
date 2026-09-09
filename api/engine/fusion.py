@@ -83,6 +83,10 @@ class FusionEngine:
                 continue
 
             needs_review = source == "rule_override"
+            # 条款文本疑似注入 → 强制提示复核（与 rule_override 同等级提示）
+            injection_suspected = bool(llm.injection_suspected) if llm else False
+            if injection_suspected:
+                needs_review = True
 
             # 解释文本来源：规则命中优先展示规则解释，LLM 补充语义
             explain = llm.plain_explain if llm and llm.plain_explain else ""
@@ -110,6 +114,7 @@ class FusionEngine:
                     final_level=final_level,
                     source=source,
                     needs_review=needs_review,
+                    injection_suspected=injection_suspected,
                     risk_type=risk_type,
                     explain=explain,
                     suggest=suggest,
