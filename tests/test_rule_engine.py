@@ -1,5 +1,7 @@
 """规则引擎测试（FR-05）：三类检测 —— 关键词 / 数值阈值 / 缺失。"""
 
+import pytest
+
 from api.engine.rule_engine import RuleEngine
 from api.schemas import Clause
 
@@ -59,3 +61,34 @@ def test_rule_hit_carries_risk_type():
     eng = RuleEngine().load("rent")
     hits = eng.match_clauses([_clause("押金概不退还。")])
     assert any(h.risk_type == "押金" for h in hits)
+
+
+def test_load_missing_rule_file(tmp_path):
+    """不存在的规则文件 → FileNotFoundError。"""
+    eng = RuleEngine(rules_dir=tmp_path)
+    with pytest.raises(FileNotFoundError):
+        eng.load("rent")
+
+
+def test_all_rules_property():
+    eng = RuleEngine().load("rent")
+    assert len(eng.all_rules) > 0
+    assert all(hasattr(r, "id") for r in eng.all_rules)
+
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("三", 3.0),
+        ("十二", 12.0),
+        ("二十", 20.0),
+        ("一百二十三", 123.0),
+        ("两百", 200.0),
+        ("一千", 1000.0),
+        ("123.5", 123.5),
+        ("abc", None),
+        ("", None),
+    ],
+)
+def test_to_number_chinese(raw, expected):
+    assert RuleEngine._to_number(raw) == expected

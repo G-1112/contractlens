@@ -32,9 +32,9 @@ contractlens/
 ├── data/
 │   ├── regulations/     # 法规片段（rent/labor/intern.json）
 │   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元测试（30 项，覆盖切分/规则/融合/评分/流水线）
+├── tests/               # 单元 + 集成测试（126 项，覆盖解析/规则/融合/评分/安全/路由全链路）
 ├── scripts/             # make_sample_docx.py（生成可上传的样本）
-├── docs/                # prompt-log / iteration / RETRO / 技术文档
+├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
 ```
 
@@ -101,7 +101,7 @@ npm run dev
 
 ```bash
 pytest -q
-# 预期：30 passed
+# 预期：126 passed（含安全/并发/路由集成回归测试）
 ```
 
 ---
@@ -147,8 +147,10 @@ pytest -q
 ## 隐私与合规
 
 - 文件**分析完成后立即删除**，不落盘持久化（`api/routers/analyze.py` 的 finally 块）。
+- 内存态存储内置 **TTL 过期清理**，长时间运行内存不无限增长。
 - 全局显著标注「不构成法律意见，仅供参考」，不做法律效力判定。
 - 不收集用户数据、无账号系统、无云端存储。
+- 完整的 Prompt 注入防护、输出枚举校验、上传流式限长等安全设计见 [`docs/安全设计.md`](docs/安全设计.md)。
 
 ## 许可
 

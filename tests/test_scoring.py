@@ -56,3 +56,25 @@ def test_risk_counts():
     items = [_item("高", "押金"), _item("高", "押金"), _item("中", "维修")]
     r = score_report("f1", "rent", items, [], clause_count=10)
     assert r.risk_counts == {"高": 2, "中": 1, "低": 0, "无": 0}
+
+
+def test_overall_level_mid():
+    # 1 条高风险 = -20 → 80 分，落入"低"档；3 条高风险 = -60 → 40 分，落入"中"档
+    items = [_item("高", "押金"), _item("高", "解约"), _item("高", "违约金")]
+    r = score_report("f1", "rent", items, [], clause_count=10)
+    assert r.total_score == 40
+    assert r.overall_level == "中"
+
+
+def test_overall_level_low():
+    items = [_item("高", "押金")]
+    r = score_report("f1", "rent", items, [], clause_count=10)
+    assert r.total_score == 80
+    assert r.overall_level == "低"
+
+
+def test_injection_flagged():
+    items = [_item("高", "押金"), _item("中", "违约金", "c2")]
+    items[1].injection_suspected = True
+    r = score_report("f1", "rent", items, [], clause_count=10)
+    assert r.injection_flagged is True
