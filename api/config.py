@@ -27,6 +27,7 @@ class Settings:
     llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", "0"))
     llm_max_retries: int = int(os.getenv("LLM_MAX_RETRIES", "2"))
     llm_timeout_seconds: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
+    llm_concurrency: int = int(os.getenv("LLM_CONCURRENCY", "8"))  # 并发判定上限（性能关键）
 
     # ---- 检索器 ----
     use_vector_db: bool = os.getenv("USE_VECTOR_DB", "false").strip().lower() in {

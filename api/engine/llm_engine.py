@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 
@@ -94,10 +95,18 @@ class LlmEngine:
                 )
                 raw = resp.choices[0].message.content or "{}"
                 return self._parse(raw, clause)
-            except (ValidationError, json.JSONDecodeError, KeyError) as e:
-                last_err = e  # 非法 JSON / 字段缺失，重试
-            except Exception as e:  # noqa: BLE001 网络/超时，重试
+            except (ValidationError, json.JSONDecodeError, KeyError, ValueError) as e:
+                # 确定性错误：temperature=0 下模型输出结构非法，重试无意义，
+                # 直接降级（交由 fusion 走 rule_only），不浪费重试配额。
                 last_err = e
+                raise LLMUnavailable(
+                    f"LLM 返回不可解析（temperature=0，不再重试）: {last_err}"
+                )
+            except Exception as e:  # noqa: BLE001 网络/超时/限流 → 重试
+                last_err = e
+                if attempt < self.settings.llm_max_retries:
+                    # 轻量指数退避，避免重试风暴（不超过 3s）
+                    await asyncio.sleep(min(0.5 * (attempt + 1), 3.0))
 
         # 重试耗尽：抛出，交由 fusion 降级
         raise LLMUnavailable(f"LLM 判定失败（重试 {self.settings.llm_max_retries} 次）: {last_err}")

@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import AsyncIterator, Callable
 
@@ -29,6 +30,28 @@ from .schemas import (
 # SSE 事件类型
 Event = dict
 Sink = Callable[[Event], object]
+
+
+class _JudgeProgress:
+    """并发判定阶段的进度计数：多条任务同时完成，用锁保证计数与推送原子。"""
+
+    def __init__(self, total: int, emit: Sink) -> None:
+        self._total = total
+        self._done = 0
+        self._emit = emit
+        self._lock = asyncio.Lock()
+
+    async def tick(self) -> None:
+        async with self._lock:
+            self._done += 1
+            self._emit(
+                {
+                    "type": "progress",
+                    "stage": "judge",
+                    "current": self._done,
+                    "total": self._total,
+                }
+            )
 
 
 def parse_file(path: str | Path, filename: str, contract_type: str) -> ParsedDocument:
@@ -109,7 +132,7 @@ async def run_analysis_streaming(
         rule_by_clause.setdefault(h.clause_id, []).append(h)
     missing_hits = [h for h in rule_hits if h.clause_id.startswith("missing-")]
 
-    # 2) 检索器 + LLM 判定（逐条）
+    # 2) 检索器 + LLM 判定（并发，受信号量限流，加速比约 N/concurrency）
     retriever = RegulationRetriever()
     llm = LlmEngine(settings)
     fusion = FusionEngine()
@@ -117,20 +140,30 @@ async def run_analysis_streaming(
     judgements: list[LlmJudgement] = []
     reg_refs: dict[str, list[str]] = {}
 
-    for i, clause in enumerate(clauses, start=1):
-        emit({"type": "progress", "stage": "judge", "current": i, "total": total})
-        # RAG 检索（仅对命中规则或非空条款检索，控制成本）
-        if clause.text.strip():
-            refs = retriever.retrieve_for(clause, contract_type, top_k=settings.rag_top_k)
-            reg_refs[clause.id] = refs
-        else:
-            refs = []
-        # LLM 语义判定；失败降级（该条款由 fusion 走 rule_only）
-        try:
-            j = await llm.judge(clause, refs)
-        except Exception:  # noqa: BLE001 LLM 不可用 → 记空，交由规则兜底
-            j = LlmJudgement(clause_id=clause.id, risk_level="无")
-        judgements.append(j)
+    sem = asyncio.Semaphore(max(1, settings.llm_concurrency))
+    progress = _JudgeProgress(total, emit)
+
+    async def _judge_one(clause: Clause) -> LlmJudgement:
+        async with sem:
+            # RAG 检索（仅对非空条款检索，控制成本）
+            if clause.text.strip():
+                refs = retriever.retrieve_for(clause, contract_type, top_k=settings.rag_top_k)
+                reg_refs[clause.id] = refs
+            else:
+                refs = []
+            # LLM 语义判定；失败降级（该条款由 fusion 走 rule_only）
+            try:
+                return await llm.judge(clause, refs)
+            except Exception:  # noqa: BLE001 LLM 不可用 → 记空，交由规则兜底
+                return LlmJudgement(clause_id=clause.id, risk_level="无")
+
+    async def _judge_and_tick(clause: Clause) -> LlmJudgement:
+        j = await _judge_one(clause)
+        await progress.tick()
+        return j
+
+    # gather 保持提交顺序，结果与 clauses 一一对应（供 fusion 使用）
+    judgements = await asyncio.gather(*[_judge_and_tick(c) for c in clauses])
 
     # 3) 融合 + 逐条推送风险事件
     items = fusion.fuse(clauses, [h for h in rule_hits if not h.clause_id.startswith("missing-")], judgements, reg_refs)

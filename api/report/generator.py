@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import datetime as dt
 from pathlib import Path
 
@@ -44,20 +45,30 @@ def _clause_brief(item: RiskItem, max_len: int = 30) -> str:
 async def generate_talk_scripts(
     items: list[RiskItem], llm_engine=None, tone: str = "礼貌"
 ) -> list[str]:
-    """为命中的高风险条款生成话术。无 LLM 时用确定性模板。"""
+    """为命中的高风险条款生成话术。无 LLM 时用确定性模板。
+
+    多条款话术生成并发执行（受信号量限流），避免逐条串行拖慢评分阶段。
+    """
     targets = [it for it in items if it.final_level in ("高", "中")]
     # 高风险优先，最多 5 条
     order = {"高": 0, "中": 1}
     targets.sort(key=lambda it: order[it.final_level])
     targets = targets[:5]
 
-    scripts: list[str] = []
-    for it in targets:
-        if llm_engine is not None and getattr(llm_engine, "_client", None):
-            scripts.append(await _llm_script(llm_engine, it, tone))
-        else:
-            scripts.append(_template_script(it))
-    return scripts
+    if not targets:
+        return []
+
+    use_llm = llm_engine is not None and getattr(llm_engine, "_client", None)
+    sem = asyncio.Semaphore(max(1, 8))
+
+    async def _one(it: RiskItem) -> str:
+        async with sem:
+            if use_llm:
+                return await _llm_script(llm_engine, it, tone)
+            return _template_script(it)
+
+    # gather 保持排序后的优先级顺序（高 → 中）
+    return list(await asyncio.gather(*[_one(it) for it in targets]))
 
 
 async def _llm_script(llm_engine, item: RiskItem, tone: str) -> str:
