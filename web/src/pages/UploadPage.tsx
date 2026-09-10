@@ -16,16 +16,27 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // 扫描件提示（第五轮修复）：后端 upload 会返回 has_text_layer，
+  // 此前前端只把它存进 store 就立刻进入分析，导致用户要等到分析阶段
+  // 才收到 NO_TEXT_LAYER 报错。这里改为上传后立即拦下并给出可操作指引。
+  const [noTextLayer, setNoTextLayer] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const doUpload = useCallback(async () => {
     if (!file) return;
     setUploading(true);
     setErr(null);
+    setNoTextLayer(false);
     try {
       const res = await uploadFile(file, contractType);
       setFile(res.file_id, res.contract_type, res.filename);
       setUploadInfo({ page_count: res.page_count, has_text_layer: res.has_text_layer });
+
+      // 无文本层（通常是扫描件/图片版 PDF）：不要进入分析，否则必然失败。
+      if (!res.has_text_layer) {
+        setNoTextLayer(true);
+        return;
+      }
       setStage("analyzing");
     } catch (e) {
       setErr(e instanceof Error ? e.message : "上传失败");
@@ -112,6 +123,25 @@ export default function UploadPage() {
 
       {err && (
         <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{err}</div>
+      )}
+
+      {noTextLayer && (
+        <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm">
+          <div className="mb-1 font-semibold text-amber-800">
+            这份 PDF 没有文字层，无法直接审查
+          </div>
+          <p className="text-amber-800">
+            文件看起来是扫描件或图片版（页面内容是一张图，而不是可选中的文字）。
+          </p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-amber-800">
+            <li>用 Word / WPS 打开原件，另存为 <code>.docx</code> 后重新上传；</li>
+            <li>或导出为<strong>文字版 PDF</strong>（打印 → 另存为 PDF，而非扫描）；</li>
+            <li>文档 30 页以内、20MB 以内可以直接上传。</li>
+          </ul>
+          <p className="mt-2 text-amber-700">
+            提示：本项目当前版本不做 OCR，扫描件需先在本地转成可选中文字的版本。
+          </p>
+        </div>
       )}
 
       <button
