@@ -226,12 +226,28 @@ class ReportGenerator:
         return tpl.render(report=r, extract_ref=_extract_ref, date=dt.date.today().isoformat())
 
     def save_pdf(self, out: str | Path) -> Path:
-        """HTML → PDF（需 weasyprint）。"""
+        """HTML → PDF（需 weasyprint）。
+
+        安全（R-SSRF-01）：显式传入受限 url_fetcher，仅允许内联 data: 资源，
+        阻断 file:// 与 http(s):// 抓取，避免模板后续改动引入 SSRF 或本地文件读取。
+        """
         from weasyprint import HTML  # 延迟导入
 
         html = self.to_html()
         out = Path(out)
-        HTML(string=html).write_pdf(str(out))
+
+        def _safe_url_fetcher(url: str, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
+            if url.startswith("data:"):
+                from weasyprint.urls import default_url_fetcher
+
+                return default_url_fetcher(url, *args, **kwargs)
+            raise ValueError(f"出于安全考虑，PDF 渲染禁止加载外部资源：{url[:80]}")
+
+        try:
+            HTML(string=html, url_fetcher=_safe_url_fetcher).write_pdf(str(out))
+        except TypeError:
+            # 兼容不接受 url_fetcher 参数的旧版本 weasyprint
+            HTML(string=html).write_pdf(str(out))
         return out
 
 

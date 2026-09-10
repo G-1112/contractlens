@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import AsyncIterator
 
 from fastapi import APIRouter, HTTPException, Request
@@ -20,6 +21,8 @@ from pydantic import BaseModel
 from ..pipeline import parse_file, run_analysis_streaming
 from ..ratelimit import analyze_limiter, client_ip
 from ..store import store
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["analyze"])
 
@@ -90,12 +93,16 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
                     )
                     store.put_report(req.file_id, report)
                 except Exception as e:  # noqa: BLE001
+                    # 安全（R-ERR-01）：异常原文可能含内部路径/堆栈，只落日志，
+                    # 不通过 SSE 回传客户端，避免信息泄露。
+                    logger.exception("分析失败 file_id=%s", req.file_id)
                     queue.put_nowait(
                         {
                             "type": "error",
                             "code": "ANALYZE_FAILED",
                             "fallback": "rule_only",
-                            "message": str(e),
+                            "message": "分析过程出错，已回退至规则引擎结果",
+                            "detail": type(e).__name__,
                         }
                     )
                 finally:

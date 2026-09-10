@@ -9,10 +9,11 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, PlainTextResponse
 
 from ..config import get_settings
+from ..ratelimit import client_ip, report_limiter
 from ..report.generator import ReportGenerator
 from ..schemas import AnalysisReport
 from ..store import store
@@ -29,7 +30,16 @@ async def get_result(file_id: str) -> AnalysisReport:
 
 
 @router.post("/report/{file_id}")
-async def export_report(file_id: str, format: str = "md"):
+async def export_report(file_id: str, request: Request, format: str = "md"):
+    # 限流（R-RL-01）：PDF/DOCX 走 WeasyPrint 重渲染，需防高频调用耗尽 CPU
+    ip = client_ip(request)
+    if not report_limiter.allow(ip):
+        raise HTTPException(
+            status_code=429,
+            detail=f"导出过于频繁，请 {report_limiter.retry_after(ip)} 秒后重试",
+            headers={"Retry-After": str(report_limiter.retry_after(ip))},
+        )
+
     report = store.get_report(file_id)
     if report is None:
         raise HTTPException(status_code=404, detail="结果不存在，请重新分析")

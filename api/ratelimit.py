@@ -55,6 +55,10 @@ class RateLimiter:
 upload_limiter = RateLimiter(max_calls=10, window_seconds=60.0)
 # 分析：涉及 LLM 调用（有真实成本），单 IP 每分钟 20 次
 analyze_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
+# 脚本生成：触发一次真实 LLM 调用，单 IP 每分钟 15 次（R-RL-01）
+script_limiter = RateLimiter(max_calls=15, window_seconds=60.0)
+# 报告导出：PDF/DOCX 走 WeasyPrint 重渲染，开销大，单 IP 每分钟 20 次（R-RL-01）
+report_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
 
 
 def client_ip(request) -> str:
