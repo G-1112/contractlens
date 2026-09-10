@@ -48,6 +48,10 @@ def _cosine(a: Counter, b: Counter) -> float:
     return dot / (na * nb)
 
 
+# 法规片段缓存：(法规目录, 合同类型) → 片段列表，跨 retriever 实例复用
+_SNIPPET_CACHE: dict[tuple[str, str], list[_Snippet]] = {}
+
+
 class RegulationRetriever:
     """法规片段检索器。"""
 
@@ -62,15 +66,27 @@ class RegulationRetriever:
 
     # ------------------------------------------------------------------
     def load(self, contract_type: str) -> "RegulationRetriever":
-        """加载某合同类型的法规片段。"""
+        """加载某合同类型的法规片段（带跨实例缓存）。
+
+        法规是静态资源，但每次分析都会新建 retriever 实例；
+        若不缓存，每条片段的 bigram 向量都要重算一遍（实测占端到端约 20%）。
+        缓存键 = (法规目录, 合同类型)，避免不同目录（如测试 tmp_path）串数据。
+        """
         if contract_type in self._snippets:
             return self
+        cache_key = (str(self.reg_dir), contract_type)
+        cached = _SNIPPET_CACHE.get(cache_key)
+        if cached is not None:
+            self._snippets[contract_type] = cached
+            return self
+
         path = self.reg_dir / f"{contract_type}.json"
         if not path.exists():
             self._snippets[contract_type] = []
+            _SNIPPET_CACHE[cache_key] = []
             return self
         data = json.loads(path.read_text(encoding="utf-8"))
-        self._snippets[contract_type] = [
+        snippets = [
             _Snippet(
                 id_=item.get("id", f"{contract_type}-{i}"),
                 title=item.get("title", ""),
@@ -79,6 +95,8 @@ class RegulationRetriever:
             )
             for i, item in enumerate(data)
         ]
+        _SNIPPET_CACHE[cache_key] = snippets
+        self._snippets[contract_type] = snippets
         return self
 
     # ------------------------------------------------------------------

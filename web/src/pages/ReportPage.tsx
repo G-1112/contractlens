@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useStore } from "../store/useStore";
 import ScoreGauge from "../components/ScoreGauge";
 import RadarChart from "../components/RadarChart";
@@ -6,8 +7,29 @@ import RiskCard from "../components/RiskCard";
 import TalkScript from "../components/TalkScript";
 import { reportDownloadUrl } from "../api";
 
+type LevelFilter = "全部" | "高" | "中" | "低";
+
+const LEVELS: LevelFilter[] = ["全部", "高", "中", "低"];
+
 export default function ReportPage() {
   const { report, document, fileId, reset } = useStore();
+  // 交互增强：风险等级筛选 + 关键词搜索（条款多时快速定位）
+  const [level, setLevel] = useState<LevelFilter>("全部");
+  const [keyword, setKeyword] = useState("");
+
+  const filtered = useMemo(() => {
+    const list = report?.items ?? [];
+    const kw = keyword.trim().toLowerCase();
+    return list.filter((it) => {
+      if (level !== "全部" && it.final_level !== level) return false;
+      if (kw) {
+        const hay = `${it.clause_text}${it.explain}${it.suggest}${it.risk_type}`.toLowerCase();
+        if (!hay.includes(kw)) return false;
+      }
+      return true;
+    });
+  }, [report, level, keyword]);
+
   if (!report || !fileId) return null;
 
   const items = report.items;
@@ -38,6 +60,13 @@ export default function ReportPage() {
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
           >
             导出 Markdown
+          </a>
+          <a
+            href={reportDownloadUrl(fileId, "revised")}
+            title="仅含建议修改的条款：原文 ↔ 改写后对照，可直接发给对方谈判"
+            className="rounded-lg border border-brand-600 bg-white px-3 py-2 text-sm font-medium text-brand-700 hover:bg-slate-50"
+          >
+            下载修订稿
           </a>
           <a
             href={reportDownloadUrl(fileId, "pdf")}
@@ -97,16 +126,47 @@ export default function ReportPage() {
           {document && <ClauseViewer clauses={document.clauses} items={items} />}
         </div>
         <div>
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">
-            风险清单（点击跳转原文）
-          </h3>
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-700">
+              风险清单（点击跳转原文）
+            </h3>
+            <div className="ml-auto flex items-center gap-1">
+              {LEVELS.map((lv) => (
+                <button
+                  key={lv}
+                  onClick={() => setLevel(lv)}
+                  className={`rounded-md px-2 py-1 text-xs font-medium transition ${
+                    level === lv
+                      ? "bg-brand-600 text-white"
+                      : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  }`}
+                >
+                  {lv}
+                </button>
+              ))}
+            </div>
+          </div>
+          <input
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="搜索条款关键词（如 押金、违约金）"
+            className="mb-2 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+          />
+          <p className="mb-2 text-xs text-slate-400">
+            显示 {filtered.length} / {items.length} 条
+          </p>
           <div className="max-h-[70vh] space-y-3 overflow-y-auto pr-1">
-            {items.map((it) => (
+            {filtered.map((it) => (
               <RiskCard key={it.clause_id} item={it} />
             ))}
             {items.length === 0 && (
               <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-400">
                 未发现风险条款 🎉
+              </div>
+            )}
+            {items.length > 0 && filtered.length === 0 && (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-400">
+                没有符合当前筛选条件的风险条款
               </div>
             )}
           </div>

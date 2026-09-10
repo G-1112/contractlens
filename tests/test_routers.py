@@ -191,6 +191,16 @@ def test_export_markdown(client):
     assert "合同审查报告" in r.text
 
 
+def test_export_revised(client):
+    """修订稿导出：原文 ↔ 改写后对照（交互增强）。"""
+    _put_report("f1")
+    r = client.post("/api/report/f1", params={"format": "revised"})
+    assert r.status_code == 200
+    assert "合同修订建议稿" in r.text
+    assert "建议改为" in r.text
+    assert "attachment" in r.headers.get("content-disposition", "")
+
+
 def test_export_docx(client):
     _put_report("f1")
     r = client.post("/api/report/f1", params={"format": "docx"})

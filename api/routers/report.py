@@ -41,6 +41,14 @@ async def export_report(file_id: str, format: str = "md"):
     if format == "md":
         return PlainTextResponse(gen.to_markdown(), media_type="text/markdown")
 
+    if format == "revised":
+        # 修订稿：原文 ↔ 改写后对照，用户可直接据此与对方谈判（交互增强）
+        return PlainTextResponse(
+            gen.to_revised_markdown(),
+            media_type="text/markdown",
+            headers={"Content-Disposition": 'attachment; filename="contract-revised.md"'},
+        )
+
     if format == "pdf":
         out = out_dir / f"report-{uuid.uuid4().hex}.pdf"
         gen.save_pdf(out)
@@ -55,4 +63,4 @@ async def export_report(file_id: str, format: str = "md"):
             filename="合同审查报告.docx",
         )
 
-    raise HTTPException(status_code=400, detail="format 仅支持 md / pdf / docx")
+    raise HTTPException(status_code=400, detail="format 仅支持 md / revised / pdf / docx")

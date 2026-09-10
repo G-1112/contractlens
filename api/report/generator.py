@@ -169,6 +169,54 @@ class ReportGenerator:
         return out
 
     # ------------------------------------------------------------------
+    def to_revised_markdown(self) -> str:
+        """修订稿：只列「建议修改」的条款，原文 ↔ 改写后对照。
+
+        交互价值：用户最想要的不是"风险报告"，而是"我该把合同改成什么样"。
+        这份稿子可以直接复制/发给对方（房东 / HR）作为谈判依据。
+        """
+        r = self.report
+        revised = [it for it in r.items if it.rewrite or it.suggest]
+
+        lines: list[str] = []
+        lines.append("# 合同修订建议稿")
+        lines.append("")
+        lines.append(
+            f"> 共审查 {r.clause_count} 条条款，其中 **{len(revised)} 处**建议修改。"
+            f"（总分 {r.total_score} / 100，{r.overall_level}风险）"
+        )
+        lines.append("")
+
+        if not revised:
+            lines.append("未发现需要改写的条款，当前条款表述可接受。")
+            lines.append("")
+        else:
+            # 高风险在前，便于优先谈判
+            for it in sorted(revised, key=lambda x: {"高": 0, "中": 1, "低": 2}.get(x.final_level, 3)):
+                lines.append(f"## 第{_extract_ref(it)}条 · {it.final_level}风险")
+                lines.append("")
+                lines.append("**原文**")
+                lines.append("")
+                lines.append(f"> {it.clause_text}")
+                lines.append("")
+                if it.rewrite:
+                    lines.append("**建议改为**")
+                    lines.append("")
+                    lines.append(f"> {it.rewrite}")
+                    lines.append("")
+                if it.suggest and it.suggest != it.rewrite:
+                    lines.append(f"**理由 / 谈判要点**：{it.suggest}")
+                    lines.append("")
+                if it.regulation_refs:
+                    lines.append("**参考依据**：" + "；".join(it.regulation_refs))
+                    lines.append("")
+
+        lines.append("---")
+        lines.append("")
+        lines.append(r.disclaimer)
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
     def to_html(self) -> str:
         from jinja2 import Environment
 

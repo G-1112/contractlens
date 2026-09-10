@@ -122,3 +122,38 @@ def test_generate_talk_scripts_priority_order():
     scripts = asyncio.run(generate_talk_scripts(items, None))
     assert len(scripts) == 5  # 截断到 5 条
     assert "押金" in scripts[0]  # 高风险排最前
+
+
+# ---------------------------------------------------------------------------
+# 修订稿（交互增强）：原文 ↔ 改写后对照
+# ---------------------------------------------------------------------------
+def test_to_revised_markdown():
+    md = ReportGenerator(_report()).to_revised_markdown()
+    assert "# 合同修订建议稿" in md
+    assert "原文" in md
+    assert "建议改为" in md
+    # 应包含改写后的条款正文
+    assert "租赁期满押金无息退还" in md
+    assert "经协商一致方可调整" in md
+    # 高风险排最前（第五条押金在前）
+    assert md.index("押金概不退还") < md.index("单方面涨租")
+
+
+def test_to_revised_markdown_keeps_disclaimer():
+    md = ReportGenerator(_report()).to_revised_markdown()
+    assert "不构成法律意见" in md
+
+
+def test_to_revised_markdown_no_rewrites():
+    """无建议修改时给出明确提示，而不是返回空文档。"""
+    r = AnalysisReport(
+        file_id="f1",
+        items=[RiskItem(clause_id="c1", clause_text="条款正文", final_level="无")],
+    )
+    md = ReportGenerator(r).to_revised_markdown()
+    assert "未发现需要改写的条款" in md
+
+
+def test_to_revised_markdown_counts():
+    md = ReportGenerator(_report()).to_revised_markdown()
+    assert "2 处" in md  # _report() 有 2 条带 rewrite/suggest 的条目
