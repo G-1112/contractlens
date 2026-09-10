@@ -10,15 +10,29 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
 
 from ..config import get_settings
+from ..ratelimit import client_ip, upload_limiter
 from ..schemas import UploadResult
 from ..store import store
 
 router = APIRouter(prefix="/api", tags=["upload"])
 
 _ALLOWED = {".pdf", ".docx", ".doc"}
+
+# 真实文件类型签名（magic bytes）：扩展名可伪造，内容签名不可
+_MAGIC: dict[str, tuple[bytes, ...]] = {
+    ".pdf": (b"%PDF-",),
+    ".docx": (b"PK\x03\x04",),  # DOCX 本质是 zip 包
+    ".doc": (b"\xd0\xcf\x11\xe0", b"PK\x03\x04"),  # OLE2 复合文档 或 zip
+}
+
+
+def _check_magic(data: bytes, suffix: str) -> bool:
+    """校验内容签名与扩展名是否一致，拒绝伪装文件（扩展名可伪造）。"""
+    sigs = _MAGIC.get(suffix)
+    return bool(sigs) and any(data.startswith(s) for s in sigs)
 
 
 async def stream_read_limited(file: UploadFile, max_bytes: int) -> bytes:
@@ -62,9 +76,17 @@ def _probe(path: Path, suffix: str) -> tuple[bool, int]:
 
 @router.post("/upload", response_model=UploadResult)
 async def upload(
+    request: Request,
     file: UploadFile = File(...),
     contract_type: str = Form("rent"),
 ) -> UploadResult:
+    # 限流：解析开销大，防止被高频调用耗尽磁盘/内存
+    ip = client_ip(request)
+    if not upload_limiter.allow(ip):
+        raise HTTPException(
+            status_code=429,
+            detail=f"上传过于频繁，请 {upload_limiter.retry_after(ip)} 秒后再试",
+        )
     settings = get_settings()
     suffix = Path(file.filename or "x").suffix.lower()
     if suffix not in _ALLOWED:
@@ -74,6 +96,12 @@ async def upload(
     data = await stream_read_limited(file, settings.max_upload_bytes)
     if not data:
         raise HTTPException(status_code=400, detail="空文件")
+
+    # 内容签名校验：扩展名可伪造（如把可执行文件改名成 .docx 上传）
+    if not _check_magic(data, suffix):
+        raise HTTPException(
+            status_code=415, detail=f"文件内容与 {suffix} 格式不符，可能已损坏或被伪装"
+        )
 
     if contract_type not in ("rent", "labor", "intern"):
         contract_type = "rent"

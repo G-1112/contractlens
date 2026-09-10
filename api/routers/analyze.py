@@ -13,11 +13,12 @@ import asyncio
 import json
 from typing import AsyncIterator
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ..pipeline import parse_file, run_analysis_streaming
+from ..ratelimit import analyze_limiter, client_ip
 from ..store import store
 
 router = APIRouter(prefix="/api", tags=["analyze"])
@@ -47,7 +48,14 @@ def _sse(event: dict) -> str:
 
 
 @router.post("/analyze")
-async def analyze(req: AnalyzeRequest) -> StreamingResponse:
+async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
+    # 限流：分析涉及 LLM 调用（有真实成本），防止被刷配额
+    ip = client_ip(request)
+    if not analyze_limiter.allow(ip):
+        raise HTTPException(
+            status_code=429,
+            detail=f"分析请求过于频繁，请 {analyze_limiter.retry_after(ip)} 秒后再试",
+        )
     entry = store.get_upload(req.file_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="文件不存在或已过期，请重新上传")
