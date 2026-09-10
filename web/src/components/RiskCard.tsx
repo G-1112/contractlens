@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { RiskItem, RiskLevel, Source } from "../types";
 import { useStore } from "../store/useStore";
+import CopyButton from "./CopyButton";
 
 const LEVEL_STYLE: Record<RiskLevel, string> = {
   高: "bg-red-100 text-red-700",
@@ -74,8 +75,11 @@ export default function RiskCard({ item, compact }: Props) {
           )}
           {item.rewrite && (
             <div className="rounded-lg bg-slate-50 p-2">
-              <span className="font-medium text-slate-500">改写：</span>
-              <span className="text-slate-700">{item.rewrite}</span>
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-slate-500">改写：</span>
+                <span className="flex-1 text-slate-700">{item.rewrite}</span>
+                <CopyButton text={item.rewrite} label="复制改写" />
+              </div>
             </div>
           )}
           {item.regulation_refs.length > 0 && (

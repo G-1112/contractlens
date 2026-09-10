@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "tsc src/utils/clipboard.ts --outDir .build-test --module esnext --target es2020 --moduleResolution bundler && node tests/clipboard.test.mjs"
   },
   "dependencies": {
     "echarts": "^5.5.1",

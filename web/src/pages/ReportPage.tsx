@@ -5,7 +5,9 @@ import RadarChart from "../components/RadarChart";
 import ClauseViewer from "../components/ClauseViewer";
 import RiskCard from "../components/RiskCard";
 import TalkScript from "../components/TalkScript";
+import CopyButton from "../components/CopyButton";
 import { reportDownloadUrl } from "../api";
+import { buildRewriteDigest } from "../utils/clipboard";
 
 type LevelFilter = "全部" | "高" | "中" | "低";
 
@@ -138,6 +140,17 @@ export default function ReportPage() {
               风险清单（点击跳转原文）
             </h3>
             <div className="ml-auto flex items-center gap-1">
+              {/* 一键复制全部改写建议：谈判时可直接粘贴发送，无需下载整份文档 */}
+              <CopyButton
+                text={buildRewriteDigest(filtered)}
+                label="复制全部改写"
+                doneLabel="已复制全部"
+                className={`rounded-md px-2 py-1 text-xs font-medium transition ${
+                  filtered.some((it) => it.rewrite || it.suggest)
+                    ? "bg-brand-600 text-white hover:bg-brand-700"
+                    : "cursor-not-allowed bg-slate-100 text-slate-400"
+                }`}
+              />
               {LEVELS.map((lv) => (
                 <button
                   key={lv}
