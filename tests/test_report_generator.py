@@ -81,8 +81,35 @@ def test_to_html():
 
 
 def test_extract_ref():
-    assert _extract_ref(RiskItem(clause_id="c1", clause_text="第五条 押金概不退还")) == "五条"
+    """返回「序号部分」，供 `第{ref}条` 模板拼接（第三轮修正：原来返回 '五条'，
+    与模板里的 `第{ref}条` 叠加会输出「第五条条」）。"""
+    assert _extract_ref(RiskItem(clause_id="c1", clause_text="第五条 押金概不退还")) == "五"
+    assert _extract_ref(RiskItem(clause_id="c1", clause_text="第十二条 期限")) == "十二"
     assert _extract_ref(RiskItem(clause_id="c1", clause_text="无编号条款", page=3)) == "3"
+
+
+def test_template_script_has_no_duplicated_clause_suffix():
+    """话术模板拼接后不得出现「第五条条」这类重复后缀。"""
+    s = _template_script(
+        RiskItem(clause_id="c1", clause_text="第五条 押金概不退还",
+                 suggest="明确退还条件", rewrite="押金无息退还")
+    )
+    assert "合同第五条" in s, s
+    assert "条条" not in s, f"条款号拼接重复：{s}"
+
+
+def test_revised_markdown_has_no_duplicated_clause_suffix():
+    """修订稿标题同样不得出现重复后缀。"""
+    rep = _report()
+    md = ReportGenerator(rep).to_revised_markdown()
+    assert "条条" not in md.replace("条条款", ""), md
+
+
+def test_checklist_markdown_no_duplicated_clause_suffix():
+    """整改清单同样不得出现重复后缀。"""
+    rep = _report()
+    md = ReportGenerator(rep).to_checklist_markdown()
+    assert "条条" not in md.replace("条条款", ""), md
 
 
 def test_template_script():

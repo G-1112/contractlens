@@ -73,7 +73,7 @@ export async function analyze(
   }
 }
 
-export type ReportFormat = "md" | "revised" | "pdf" | "docx";
+export type ReportFormat = "md" | "revised" | "checklist" | "pdf" | "docx";
 
 export function reportDownloadUrl(fileId: string, format: ReportFormat): string {
   return `${BASE}/report/${fileId}?format=${format}`;

@@ -210,10 +210,35 @@ def test_export_docx(client):
     )
 
 
+def test_export_checklist(client):
+    """整改清单导出：可勾选 TODO，逐条落实（第三轮交互增强）。"""
+    _put_report("f1")
+    r = client.post("/api/report/f1", params={"format": "checklist"})
+    assert r.status_code == 200
+    assert "合同整改清单" in r.text
+    # 必须是 Markdown 任务列表语法，才能被编辑器渲染成可勾选项
+    assert "- [" in r.text, r.text[:200]
+    assert "attachment" in r.headers.get("content-disposition", "")
+    assert "checklist" in r.headers.get("content-disposition", "")
+
+
+def test_checklist_marks_high_risk_unchecked(client):
+    """高风险项应默认未勾选，提示用户优先处理。"""
+    _put_report("f1")
+    r = client.post("/api/report/f1", params={"format": "checklist"})
+    md = r.text
+    # 高风险行必须是 `- [ ]`
+    high_lines = [ln for ln in md.splitlines() if "高风险" in ln and ln.startswith("- [")]
+    assert high_lines, md[:300]
+    assert all(ln.startswith("- [ ]") for ln in high_lines), high_lines
+
+
 def test_export_invalid_format(client):
     _put_report("f1")
     r = client.post("/api/report/f1", params={"format": "xml"})
     assert r.status_code == 400
+    # 错误提示应列出全部受支持格式，便于用户纠正
+    assert "checklist" in r.text
 
 
 def test_export_missing_report(client):

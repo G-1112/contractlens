@@ -69,6 +69,13 @@ export default function ReportPage() {
             下载修订稿
           </a>
           <a
+            href={reportDownloadUrl(fileId, "checklist")}
+            title="可勾选的整改清单：逐条列出待处理项，适合打印后与对方逐条核对"
+            className="rounded-lg border border-brand-600 bg-white px-3 py-2 text-sm font-medium text-brand-700 hover:bg-slate-50"
+          >
+            整改清单
+          </a>
+          <a
             href={reportDownloadUrl(fileId, "pdf")}
             className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
           >

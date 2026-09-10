@@ -71,6 +71,14 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
             headers={"Content-Disposition": 'attachment; filename="contract-revised.md"'},
         )
 
+    if format == "checklist":
+        # 整改清单：可勾选的 TODO 列表，用于逐条落实整改（交互增强）
+        return PlainTextResponse(
+            gen.to_checklist_markdown(),
+            media_type="text/markdown",
+            headers={"Content-Disposition": 'attachment; filename="contract-checklist.md"'},
+        )
+
     if format == "pdf":
         out = out_dir / f"report-{uuid.uuid4().hex}.pdf"
         gen.save_pdf(out)
@@ -93,4 +101,6 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
             background=BackgroundTask(_safe_unlink, out),
         )
 
-    raise HTTPException(status_code=400, detail="format 仅支持 md / revised / pdf / docx")
+    raise HTTPException(
+        status_code=400, detail="format 仅支持 md / revised / checklist / pdf / docx"
+    )

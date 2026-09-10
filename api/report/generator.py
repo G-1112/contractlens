@@ -28,12 +28,20 @@ _TALK_TEMPLATE = (
 
 
 def _extract_ref(item: RiskItem) -> str:
-    """尽量从条款文本中提取条款号（如"第五条"），否则用页/序。"""
+    """提取条款号的「序号部分」，供 `第{ref}条` 模板拼接。
+
+    - 条款文本含「第五条」→ 返回 "五"（配合模板得到 "第五条"）
+    - 未识别到条款号 → 返回页码（得到 "第2条"）
+
+    修复（第三轮）：原实现返回 "五条"（`m.group(0)[1:]`），而调用方模板又写成
+    `第{ref}条`，三处调用（话术、修订稿、整改清单）都会输出「第五条条」。
+    改为只返回序号，使模板拼接结果正确。
+    """
     import re
 
-    m = re.search(r"第[一二三四五六七八九十百零〇]+条", item.clause_text)
+    m = re.search(r"第([一二三四五六七八九十百零〇]+)条", item.clause_text)
     if m:
-        return m.group(0)[1:]  # 去掉"第"
+        return m.group(1)
     return str(item.page)
 
 
@@ -211,6 +219,62 @@ class ReportGenerator:
                     lines.append("**参考依据**：" + "；".join(it.regulation_refs))
                     lines.append("")
 
+        lines.append("---")
+        lines.append("")
+        lines.append(r.disclaimer)
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
+    def to_checklist_markdown(self) -> str:
+        """整改清单（可勾选 TODO）：把风险报告转成「逐条落实」的清单。
+
+        交互价值：报告回答"哪里有风险"，修订稿回答"改成什么"，而清单回答
+        "我接下来要做哪几件事、做完打勾"。适合打印后与对方逐条过，
+        或在 Markdown 编辑器里当任务列表跟踪进度。
+
+        排序：高风险在前；同级按条款顺序，保证与原合同顺序一致。
+        """
+        r = self.report
+        todo = [it for it in r.items if it.rewrite or it.suggest]
+
+        counts = {"高": 0, "中": 0, "低": 0}
+        for it in todo:
+            counts[it.final_level] = counts.get(it.final_level, 0) + 1
+
+        lines: list[str] = []
+        lines.append("# 合同整改清单")
+        lines.append("")
+        lines.append(
+            f"> 共审查 {r.clause_count} 条条款，需处理 **{len(todo)} 条**"
+            f"（高 {counts.get('高', 0)} / 中 {counts.get('中', 0)} / 低 {counts.get('低', 0)}）。"
+            f"总分 {r.total_score} / 100，{r.overall_level}风险。"
+        )
+        lines.append("")
+
+        if not todo:
+            lines.append("- [x] 未发现需要整改的条款，可直接签署。")
+            lines.append("")
+            lines.append("---")
+            lines.append("")
+            lines.append(r.disclaimer)
+            return "\n".join(lines)
+
+        order = {"高": 0, "中": 1, "低": 2}
+        for it in sorted(todo, key=lambda x: order.get(x.final_level, 3)):
+            ref = _extract_ref(it)
+            title = it.risk_type or it.clause_text[:24]
+            box = " " if it.final_level == "高" else "x"
+            lines.append(f"- [{box}] **第{ref}条 {title}**（{it.final_level}风险）")
+            if it.rewrite:
+                lines.append(f"  - 改为：{it.rewrite}")
+            elif it.suggest:
+                lines.append(f"  - 建议：{it.suggest}")
+            if it.regulation_refs:
+                lines.append("  - 依据：" + "；".join(it.regulation_refs))
+        lines.append("")
+        lines.append("> 说明：高风险项默认未勾选（`- [ ]`），中低风险默认已勾选（`- [x]`），")
+        lines.append("> 请按实际情况调整。全部确认无误后再签署合同。")
+        lines.append("")
         lines.append("---")
         lines.append("")
         lines.append(r.disclaimer)
