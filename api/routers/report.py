@@ -6,11 +6,13 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, PlainTextResponse
+from starlette.background import BackgroundTask
 
 from ..config import get_settings
 from ..ratelimit import client_ip, report_limiter
@@ -18,7 +20,17 @@ from ..report.generator import ReportGenerator
 from ..schemas import AnalysisReport
 from ..store import store
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api", tags=["report"])
+
+
+def _safe_unlink(path: Path) -> None:
+    """响应发送后删除临时导出文件（失败不抛异常，避免影响响应）。"""
+    try:
+        path.unlink(missing_ok=True)
+    except Exception:  # noqa: BLE001
+        logger.warning("导出临时文件删除失败：%s", path)
 
 
 @router.get("/result/{file_id}", response_model=AnalysisReport)
@@ -62,7 +74,14 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
     if format == "pdf":
         out = out_dir / f"report-{uuid.uuid4().hex}.pdf"
         gen.save_pdf(out)
-        return FileResponse(out, media_type="application/pdf", filename="合同审查报告.pdf")
+        return FileResponse(
+            out,
+            media_type="application/pdf",
+            filename="合同审查报告.pdf",
+            # 资源回收（R-DISK-01）：原实现每次导出都新建文件且从不删除，
+            # 反复导出会让 exports/ 无限膨胀。改为响应发送后删除。
+            background=BackgroundTask(_safe_unlink, out),
+        )
 
     if format == "docx":
         out = out_dir / f"report-{uuid.uuid4().hex}.docx"
@@ -71,6 +90,7 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
             out,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             filename="合同审查报告.docx",
+            background=BackgroundTask(_safe_unlink, out),
         )
 
     raise HTTPException(status_code=400, detail="format 仅支持 md / revised / pdf / docx")

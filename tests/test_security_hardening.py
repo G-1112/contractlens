@@ -11,8 +11,11 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from api.config import get_settings
 from api.main import app
 from api.ratelimit import report_limiter, script_limiter
+from api.schemas import AnalysisReport, RiskItem
+from api.store import store
 
 
 @pytest.fixture()
@@ -27,6 +30,30 @@ def _reset_limiters():
     yield
     script_limiter.reset()
     report_limiter.reset()
+
+
+@pytest.fixture()
+def sample_report() -> str:
+    """放入一份可直接导出的报告，返回 file_id。"""
+    fid = "test-export-file"
+    items = [
+        RiskItem(
+            clause_id="C1", clause_title="条款1", clause_text="正文" * 20,
+            level="高", final_level="高", score=6.0, rationale="理由" * 8,
+            suggestion="建议" * 8, rewrite="改写" * 8,
+            matched_rules=[], references=[],
+        )
+    ]
+    store.put_report(
+        fid,
+        AnalysisReport(
+            file_id=fid, contract_type="rent", total_score=62, overall_level="中",
+            radar={"合规": 70}, radar_dimensions=["合规"], items=items,
+            talk_scripts=[], injection_flagged=False, clause_count=1,
+            risk_counts={"高": 1, "中": 0, "低": 0},
+        ),
+    )
+    return fid
 
 
 # ---------------------------------------------------------------- 安全响应头
@@ -106,3 +133,36 @@ def test_analyze_error_message_is_sanitized():
     # 断言错误载荷不含 str(e) 直接回传
     assert '"message": str(e)' not in src, "异常原文仍被回传客户端"
     assert "logger.exception" in src, "异常未落服务端日志"
+
+
+# ------------------------------------------------------- 导出资源回收
+def test_docx_export_leaves_no_temp_file(client, sample_report):
+    """R-DISK-01：导出的临时文件必须在响应后被清理，否则 exports/ 会无限膨胀。"""
+    exports_dir = get_settings().upload_dir_abs / "exports"
+    exports_dir.mkdir(parents=True, exist_ok=True)
+    for stale in exports_dir.glob("report-*"):
+        stale.unlink()
+
+    r = client.post(f"/api/report/{sample_report}?format=docx")
+    assert r.status_code == 200, r.text
+    assert len(r.content) > 0
+    assert list(exports_dir.glob("report-*")) == [], "导出临时文件未被清理"
+
+
+def test_repeated_docx_export_does_not_accumulate(client, sample_report):
+    """连续多次导出不得累积临时文件。"""
+    exports_dir = get_settings().upload_dir_abs / "exports"
+    exports_dir.mkdir(parents=True, exist_ok=True)
+    for stale in exports_dir.glob("report-*"):
+        stale.unlink()
+
+    for _ in range(5):
+        assert client.post(f"/api/report/{sample_report}?format=docx").status_code == 200
+    assert list(exports_dir.glob("report-*")) == [], "重复导出出现文件累积"
+
+
+def test_markdown_export_has_no_content_disposition_leak(client, sample_report):
+    """md 导出不应带上会被解释为文件下载的奇怪头，且内容非空。"""
+    r = client.post(f"/api/report/{sample_report}?format=md")
+    assert r.status_code == 200
+    assert len(r.text) > 0
