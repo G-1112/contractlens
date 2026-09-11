@@ -115,6 +115,23 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
                     break
                 yield _sse(event)
             await task
+        except Exception as e:  # noqa: BLE001
+            # 第九轮修复：原实现此处只有 finally、没有 except，
+            # 于是 parse_file() 抛出的 XMLSyntaxError（控制字符 0x00 / 畸形 XML /
+            # 深嵌套 XML）会直接穿透 SSE 生成器 —— 流中断且**不给客户端任何错误事件**，
+            # 前端随后调 getResult 拿到 404，用户只看到「分析失败」却不知文件已损坏。
+            # 实测 3 类畸形 DOCX 均可复现。
+            # 安全（沿用 R-ERR-01）：日志留全量，客户端只给类型名与可操作提示。
+            logger.exception("解析失败 file_id=%s", req.file_id)
+            yield _sse(
+                {
+                    "type": "error",
+                    "code": "PARSE_FAILED",
+                    "fallback": "manual",
+                    "message": "文档解析失败，文件可能已损坏或含不支持的内容，请换用另存为后的 DOCX 重试",
+                    "detail": type(e).__name__,
+                }
+            )
         finally:
             # 分析完成即删，不落盘持久化（NFR-05）
             store.remove_upload(req.file_id)
