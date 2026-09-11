@@ -97,22 +97,19 @@ npm run dev
 
 #### 依赖安全说明（npm audit 结果）
 
-锁定版本经 npm audit（官方源）扫描，发现 3 条公告，全部位于 **开发态或构建链路**，生产运行时不可达：
+前端依赖曾报 3 条公告（echarts 5.5.1 XSS / vite 5.4.10 dev-server 绕过 /
+esbuild 0.21.5 开发态任意写），已通过升级全部消除：
 
-| 包 | 当前版本 | 公告 | 实际风险 |
+| 包 | 旧版本 | 升级后 | 结果 |
 |---|---|---|---|
-| `echarts` | 5.5.1 | [GHSA-2wm9-hf6c-p5cr](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr) 等 XSS | **不可达**：图表 label 来自后端硬编码 `_DIMENSIONS` 常量字典，值仅为数字；未使用 `formatter/rich` 配置（实测） |
-| `vite` | 5.4.10 | [GHSA-356w-63v5-8wf4](https://github.com/advisories/GHSA-356w-63v5-8wf4) `server.fs.deny` 绕过 | 仅 dev server 受影响；build 产物走 Rollup，无 dev middleware |
-| `esbuild` | 0.21.5 | [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) 任意写文件 | 仅开发态转译器；生产用 `vite build` 输出的静态资源 |
-
-**升级路径**（如评委要求零警告）：
+| `echarts` | 5.5.1 | **6.1.0** | XSS 公告消除；图表配置兼容（label 仍来自后端常量） |
+| `vite` | 5.4.10 | **6.4.3** | 三条 dev-server 公告消除（fs.deny 绕过 / path traversal / launch-editor） |
+| `esbuild` | 0.21.5 | **0.25.12**（随 vite 6） | 开发态任意写公告消除 |
 
 ```bash
-# 在 web/ 下：升级 echarts（生产图表库），实测兼容；vite/esbuild 不在生产路径可不升
-npm install echarts@^6.1.0
-# 验证
-npm run build
-npm test
+# 复现审计（注意：npmmirror 镜像未实现 audit 接口，需显式官方源）
+cd web && npm audit --registry=https://registry.npmjs.org
+# → found 0 vulnerabilities
 ```
 
 ### 第 5 步：上传合同试跑

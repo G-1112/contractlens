@@ -10,7 +10,7 @@
     "test": "tsc src/utils/clipboard.ts --outDir .build-test --module esnext --target es2020 --moduleResolution bundler && node tests/clipboard.test.mjs"
   },
   "dependencies": {
-    "echarts": "^5.5.1",
+    "echarts": "^6.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^4.5.5"
@@ -18,11 +18,11 @@
   "devDependencies": {
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
+    "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.5.4",
-    "vite": "^5.4.11"
+    "vite": "^6.4.3"
   }
 }

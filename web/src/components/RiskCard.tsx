@@ -55,6 +55,11 @@ export default function RiskCard({ item, compact }: Props) {
         {item.needs_review && (
           <span className="text-xs font-medium text-purple-600">建议人工复核</span>
         )}
+        {item.injection_suspected && (
+          <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-semibold text-rose-700">
+            ⚠ 疑似提示注入 · 已忽略该指令
+          </span>
+        )}
       </div>
 
       <p className="mt-2 line-clamp-3 text-sm text-slate-700">{item.clause_text}</p>

@@ -86,6 +86,14 @@ export default function ReportPage() {
         </div>
       </div>
 
+      {/* 注入检测横幅（安全创新点 R-INJ-01） */}
+      {report.injection_flagged && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          ⚠ 检测到部分条款文本疑似包含<b>提示注入</b>（试图指示 AI 忽略审查规则）。
+          系统已按数据而非指令处理这些条款，对应风险卡片带「疑似提示注入」标记，建议人工复核原文。
+        </div>
+      )}
+
       {/* 仪表盘 */}
       <div className="grid gap-4 md:grid-cols-3">
         <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-white p-4">

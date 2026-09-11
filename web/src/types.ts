@@ -20,6 +20,8 @@ export interface RiskItem {
   final_level: RiskLevel;
   source: Source;
   needs_review: boolean;
+  /** 条款文本疑似含 Prompt 注入（后端 R-INJ-01 检测），已忽略该指令 */
+  injection_suspected?: boolean;
   risk_type: string;
   explain: string;
   suggest: string;
@@ -38,6 +40,8 @@ export interface AnalysisReport {
   items: RiskItem[];
   talk_scripts: string[];
   clause_count: number;
+  /** 任一条款疑似 Prompt 注入（后端安全创新点 R-INJ-01） */
+  injection_flagged?: boolean;
   risk_counts: Record<string, number>;
   disclaimer: string;
 }
