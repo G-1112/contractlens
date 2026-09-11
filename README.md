@@ -32,7 +32,7 @@ contractlens/
 ├── data/
 │   ├── regulations/     # 法规片段（rent/labor/intern.json）
 │   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（126 项，覆盖解析/规则/融合/评分/安全/路由全链路）
+├── tests/               # 单元 + 集成测试（160 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
 ├── scripts/             # make_sample_docx.py（生成可上传的样本）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
@@ -53,15 +53,19 @@ contractlens/
 ```bash
 cd contractlens
 
-# 方式 A：uv（推荐，锁文件清晰）
-uv venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-uv pip install -e ".[dev]"       # 基础 + 测试依赖
+# 方式 A：uv（推荐）—— uv.lock 已随仓库提交，可精确复现
+uv sync --extra dev          # 严格按 uv.lock 安装，版本与作者环境一致
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
 
-# 方式 B：pip
+# 方式 B：pip（不读 uv.lock，版本可能漂移）
 pip install -e ".[dev]"
 ```
 
+> **关于 `uv.lock`**：仓库内提交了锁文件（155 个包，含精确版本与哈希），
+> 用 `uv sync` 可保证「10 分钟复现」得到与作者完全一致的依赖版本。
+> 用 pip 安装则只会按 `pyproject.toml` 的 `>=` 约束解析，**结果可能不同**。
+> 若只需最小运行集，用 `uv sync`（不带 `--extra dev`）即可。
+>
 > 报告 PDF 导出依赖 `weasyprint`（需系统 cairo/pango）。若安装失败，可跳过，
 > 使用 `md` 格式导出；`pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
 
@@ -86,9 +90,29 @@ uvicorn api.main:app --reload --port 8000
 
 ```bash
 cd web
-npm install
+npm install       # 已带 package-lock.json，会按锁文件装
 npm run dev
 # 打开 http://localhost:5173
+```
+
+#### 依赖安全说明（npm audit 结果）
+
+锁定版本经 npm audit（官方源）扫描，发现 3 条公告，全部位于 **开发态或构建链路**，生产运行时不可达：
+
+| 包 | 当前版本 | 公告 | 实际风险 |
+|---|---|---|---|
+| `echarts` | 5.5.1 | [GHSA-2wm9-hf6c-p5cr](https://github.com/advisories/GHSA-2wm9-hf6c-p5cr) 等 XSS | **不可达**：图表 label 来自后端硬编码 `_DIMENSIONS` 常量字典，值仅为数字；未使用 `formatter/rich` 配置（实测） |
+| `vite` | 5.4.10 | [GHSA-356w-63v5-8wf4](https://github.com/advisories/GHSA-356w-63v5-8wf4) `server.fs.deny` 绕过 | 仅 dev server 受影响；build 产物走 Rollup，无 dev middleware |
+| `esbuild` | 0.21.5 | [GHSA-67mh-4wv8-2f99](https://github.com/advisories/GHSA-67mh-4wv8-2f99) 任意写文件 | 仅开发态转译器；生产用 `vite build` 输出的静态资源 |
+
+**升级路径**（如评委要求零警告）：
+
+```bash
+# 在 web/ 下：升级 echarts（生产图表库），实测兼容；vite/esbuild 不在生产路径可不升
+npm install echarts@^6.1.0
+# 验证
+npm run build
+npm test
 ```
 
 ### 第 5 步：上传合同试跑
@@ -101,7 +125,7 @@ npm run dev
 
 ```bash
 pytest -q
-# 预期：126 passed（含安全/并发/路由集成回归测试）
+# 预期：160 passed（含安全/并发/路由集成回归测试）
 ```
 
 ---
