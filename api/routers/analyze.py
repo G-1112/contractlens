@@ -62,11 +62,17 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
     entry = store.get_upload(req.file_id)
     if entry is None:
         raise HTTPException(status_code=404, detail="文件不存在或已过期，请重新上传")
+    # 第十二轮修复（实证 P2）：同一 file_id 可并发重复分析 —— 双击/重放会
+    # 跑两遍 LLM（真实成本），且先完成者的 finally 会删掉后完成者正在用的文件。
+    if not store.try_begin_analysis(req.file_id):
+        raise HTTPException(status_code=409, detail="该文件正在分析中，请勿重复提交")
 
     async def event_stream() -> AsyncIterator[str]:
         try:
             yield _sse({"type": "progress", "stage": "parse", "current": 0, "total": 0})
-            parsed = parse_file(entry["path"], entry["filename"], req.contract_type)
+            # 第十二轮修复（实证 P2）：pdfplumber/python-docx 解析是重 CPU 同步操作，
+            # 直接跑在事件循环上会卡住所有并发 SSE 流，移入线程池。
+            parsed = await asyncio.to_thread(parse_file, entry["path"], entry["filename"], req.contract_type)
             if not parsed.has_text_layer:
                 yield _sse(
                     {
@@ -133,7 +139,8 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
                 }
             )
         finally:
-            # 分析完成即删，不落盘持久化（NFR-05）
+            # 释放在途占位 + 分析完成即删，不落盘持久化（NFR-05）
+            store.end_analysis(req.file_id)
             store.remove_upload(req.file_id)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

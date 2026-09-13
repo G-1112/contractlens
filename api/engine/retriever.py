@@ -114,6 +114,12 @@ class RegulationRetriever:
         if self.settings.use_vector_db:
             return self._retrieve_chroma(clause, contract_type, top_k)
 
+        return self._retrieve_tfidf(clause, snippets, top_k)
+
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _retrieve_tfidf(clause: Clause, snippets: list["_Snippet"], top_k: int) -> list[str]:
+        """纯 Python bigram TF-IDF 检索（默认路径，零依赖）。"""
         qvec = _bigrams(clause.text)
         scored = [(_cosine(qvec, s.vector), s) for s in snippets]
         scored.sort(key=lambda x: -x[0])
@@ -129,7 +135,10 @@ class RegulationRetriever:
             raise RuntimeError("USE_VECTOR_DB=true 但未安装 chromadb，请 pip install -e '.[vectordb]'") from e
         # 轻量实现：为保持简单，此处退化为 TF-IDF（生产可替换为真实向量检索）
         # 说明：真实 Chroma 接入见 docs/iteration/vector-db.md 的迁移路径
-        return self.retrieve_for(clause, contract_type, top_k)
+        # 第十二轮修复（实证 P1）：原实现 `return self.retrieve_for(...)` ——
+        # use_vector_db 仍为 true → 无限递归至 RecursionError，且 pipeline 的
+        # 检索调用当时在 try 之外，开启该开关后每次分析整体失败。
+        return self._retrieve_tfidf(clause, self._snippets.get(contract_type, []), top_k)
 
 
 def _infer_contract_type(clause: Clause) -> str:

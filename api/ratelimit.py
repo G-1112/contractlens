@@ -19,14 +19,29 @@ from typing import Deque
 class RateLimiter:
     """滑动窗口限流器：窗口内最多放行 max_calls 次。"""
 
+    # 键数上限（第十二轮新增）：原实现只清理「当前请求 key」的 deque，
+    # 不再回来的 IP 条目永不清理 —— 伪造源 IP 可让 _hits 无界增长（内存耗尽）。
+    MAX_KEYS = 10000
+
     def __init__(self, max_calls: int, window_seconds: float = 60.0) -> None:
         self.max_calls = max_calls
         self.window = window_seconds
         self._hits: dict[str, Deque[float]] = defaultdict(deque)
 
+    def _sweep(self, now: float) -> None:
+        """全量清扫：删除已空/全部滑出窗口的键；仍超限则淘汰最旧的键。"""
+        for key in [k for k, q in self._hits.items() if not q or (now - q[0]) > self.window]:
+            self._hits.pop(key, None)
+        while len(self._hits) >= self.MAX_KEYS:
+            # deque 首元素即该键最旧记录；按全局最旧者淘汰
+            oldest = min(self._hits, key=lambda k: self._hits[k][0])
+            self._hits.pop(oldest, None)
+
     def allow(self, key: str) -> bool:
         """是否放行；放行即记一次。"""
         now = time.time()
+        if len(self._hits) >= self.MAX_KEYS:
+            self._sweep(now)
         q = self._hits[key]
         # 滑出窗口的记录直接丢弃，避免内存无限增长
         while q and (now - q[0]) > self.window:

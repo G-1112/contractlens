@@ -81,7 +81,11 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
 
     if format == "pdf":
         out = out_dir / f"report-{uuid.uuid4().hex}.pdf"
-        gen.save_pdf(out)
+        # 第十二轮修复（实证 P2）：WeasyPrint 渲染是秒级重 CPU 同步操作，
+        # 直接跑在事件循环上会卡住所有并发请求，移入线程池。
+        import asyncio
+
+        await asyncio.to_thread(gen.save_pdf, out)
         return FileResponse(
             out,
             media_type="application/pdf",
@@ -93,7 +97,9 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
 
     if format == "docx":
         out = out_dir / f"report-{uuid.uuid4().hex}.docx"
-        gen.save_docx(out)
+        import asyncio
+
+        await asyncio.to_thread(gen.save_docx, out)
         return FileResponse(
             out,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

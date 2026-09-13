@@ -23,6 +23,9 @@ _CN_DIGIT = {
     "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10, "百": 100, "千": 1000,
 }
 
+# 条款序号后缀（第N条/款/项/章/节）：阈值规则提取数值时须排除（见 _extract_number_unit_pairs）
+_CLAUSE_NUM_SUFFIX = "条款项章节"
+
 # 数值 + 单位 联合提取：用于 threshold 规则判断
 _NUM_UNIT = re.compile(
     r"(?P<num>\d+(?:\.\d+)?|[一二两三四五六七八九十百千]+)\s*(?P<unit>%|％|倍|个月|月|元|块|天|日|年)?"
@@ -190,6 +193,14 @@ class RuleEngine:
         """
         pairs: list[tuple[float, str]] = []
         for m in _NUM_UNIT.finditer(text):
+            # 第十二轮修复（实证 P1）：条款序号（第N条/款/项/章/节）不是业务数值。
+            # 原实现把「第三条」提取为 (3.0, "")，在「单位不限/无单位数值也参与比较」
+            # 的口径下命中阈值规则 —— 「第三条 押金为一个月租金」被误报
+            # 「押金超过两个月」（3 > 2），第三条及以后条款大面积误报。
+            prev_ch = text[m.start() - 1] if m.start() > 0 else ""
+            next_ch = text[m.end()] if m.end() < len(text) else ""
+            if prev_ch == "第" and next_ch in _CLAUSE_NUM_SUFFIX:
+                continue
             raw = m.group("num")
             unit = m.group("unit") or ""
             num = cls._to_number(raw)

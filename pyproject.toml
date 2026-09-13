@@ -37,6 +37,10 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "ruff>=0.6",
+    # 测试专用：tests/test_parsers.py 等用它生成带中文文本层的 PDF 夹具。
+    # 第十二轮修复：此前未声明 → 全新环境 `pip install -e ".[dev]"` 后
+    # 5 个 PDF 相关测试 ModuleNotFoundError（「10 分钟复现」断链）。
+    "reportlab>=4.0",
 ]
 
 [build-system]

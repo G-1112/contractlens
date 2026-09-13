@@ -61,7 +61,7 @@ source .venv/bin/activate    # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
-> **关于 `uv.lock`**：仓库内提交了锁文件（155 个包，含精确版本与哈希），
+> **关于 `uv.lock`**：仓库内提交了锁文件（156 个包，含精确版本与哈希），
 > 用 `uv sync` 可保证「10 分钟复现」得到与作者完全一致的依赖版本。
 > 用 pip 安装则只会按 `pyproject.toml` 的 `>=` 约束解析，**结果可能不同**。
 > 若只需最小运行集，用 `uv sync`（不带 `--extra dev`）即可。
@@ -122,7 +122,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：160 passed（含安全/并发/路由集成回归测试）
+# 预期：176 passed（含安全/并发/路由集成回归测试）
 ```
 
 ---

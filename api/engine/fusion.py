@@ -36,7 +36,7 @@ class FusionEngine:
         self,
         clauses: list[Clause],
         rule_hits: list[RuleHit],
-        llm_judgements: list[LlmJudgement],
+        llm_judgements: list[LlmJudgement | None],
         regulation_refs: dict[str, list[str]] | None = None,
     ) -> list[RiskItem]:
         clause_map = {c.id: c for c in clauses}
@@ -47,7 +47,11 @@ class FusionEngine:
         for h in rule_hits:
             rule_by_clause.setdefault(h.clause_id, []).append(h)
 
-        llm_by_clause: dict[str, LlmJudgement] = {j.clause_id: j for j in llm_judgements}
+        # 第十二轮修复：LLM 判定缺失的条款以 None 占位（pipeline 在 LLM/检索
+        # 失败时返回 None），None 不进入 llm_by_clause —— 规则命中条目由此走
+        # 真正的 rule_only 分支（此前 None 永远不会出现，rule_only 是死代码，
+        # LLM 整体失败时所有规则命中被误标为 rule_override + 误导文案）。
+        llm_by_clause: dict[str, LlmJudgement] = {j.clause_id: j for j in llm_judgements if j is not None}
 
         items: list[RiskItem] = []
         # 参与过任一引擎判定的条款 id 并集

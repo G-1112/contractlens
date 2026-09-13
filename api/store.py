@@ -25,6 +25,20 @@ class _Store:
         self._upload_ts: dict[str, float] = {}
         self._doc_ts: dict[str, float] = {}
         self._report_ts: dict[str, float] = {}
+        # 在途分析占位（第十二轮新增）：同一 file_id 只允许一个分析任务
+        self.analyzing: set[str] = set()
+
+    # ---- 在途分析占位 ----
+    def try_begin_analysis(self, file_id: str) -> bool:
+        """占位成功返回 True；已在分析中返回 False（防双击/重放重复消耗 LLM，
+        也防两个任务互相在 finally 里删掉对方正在使用的上传文件）。"""
+        if file_id in self.analyzing:
+            return False
+        self.analyzing.add(file_id)
+        return True
+
+    def end_analysis(self, file_id: str) -> None:
+        self.analyzing.discard(file_id)
 
     @staticmethod
     def _now() -> float:

@@ -76,12 +76,19 @@ def parse_file(path: str | Path, filename: str, contract_type: str) -> ParsedDoc
 
 
 def detect_contract_type(filename: str) -> str:
-    """根据文件名/内容粗判合同类型（前端可选，后端兜底 rent）。"""
+    """根据文件名/内容粗判合同类型（前端可选，后端兜底 rent）。
+
+    第十二轮修复（潜伏 bug）：原实现把通用词「合同」当成 labor 关键词，
+    「房屋租赁合同.docx」被误判为 labor。判断顺序改为 实习 → 劳动（去掉
+    通用词「合同」，保留「劳务」）→ 租赁 → 兜底 rent。
+    """
     name = filename.lower()
-    if any(k in name for k in ("劳动", "labor", "合同", "用工")):
-        return "labor"
     if any(k in name for k in ("实习", "intern")):
         return "intern"
+    if any(k in name for k in ("劳动", "labor", "用工", "劳务")):
+        return "labor"
+    if any(k in name for k in ("租", "rent")):
+        return "rent"
     return "rent"
 
 
@@ -143,21 +150,27 @@ async def run_analysis_streaming(
     sem = asyncio.Semaphore(max(1, settings.llm_concurrency))
     progress = _JudgeProgress(total, emit)
 
-    async def _judge_one(clause: Clause) -> LlmJudgement:
+    async def _judge_one(clause: Clause) -> LlmJudgement | None:
         async with sem:
-            # RAG 检索（仅对非空条款检索，控制成本）
-            if clause.text.strip():
-                refs = retriever.retrieve_for(clause, contract_type, top_k=settings.rag_top_k)
-                reg_refs[clause.id] = refs
-            else:
-                refs = []
-            # LLM 语义判定；失败降级（该条款由 fusion 走 rule_only）
+            # 第十二轮修复（实证 P1）：
+            # ① RAG 检索原本在 try 之外 —— 检索器异常（如 USE_VECTOR_DB=true 时
+            #    的递归崩溃）会直接击穿 gather，整份合同分析失败；
+            # ② LLM 失败时原本返回 risk_level="无" 的空 judgement —— 但 fusion 的
+            #    rule_only 分支要求 llm is None，空 judgement 让所有规则命中条目
+            #    被打成 rule_override + 误导性文案「规则引擎判定为更高风险」
+            #   （实为 LLM 失败，并非规则与 LLM 冲突）。返回 None 让 fusion 走
+            #    真正的 rule_only。
             try:
+                if clause.text.strip():
+                    refs = retriever.retrieve_for(clause, contract_type, top_k=settings.rag_top_k)
+                    reg_refs[clause.id] = refs
+                else:
+                    refs = []
                 return await llm.judge(clause, refs)
-            except Exception:  # noqa: BLE001 LLM 不可用 → 记空，交由规则兜底
-                return LlmJudgement(clause_id=clause.id, risk_level="无")
+            except Exception:  # noqa: BLE001 检索/LLM 不可用 → 记空，交由规则兜底（rule_only）
+                return None
 
-    async def _judge_and_tick(clause: Clause) -> LlmJudgement:
+    async def _judge_and_tick(clause: Clause) -> LlmJudgement | None:
         j = await _judge_one(clause)
         await progress.tick()
         return j

@@ -108,11 +108,18 @@ async def upload(
 
     file_id = uuid.uuid4().hex
     path = settings.upload_dir_abs / f"{file_id}{suffix}"
-    path.write_bytes(data)
+    # 第十二轮修复（实证 P2）：解析大文件是重 CPU 同步操作，直接跑在事件循环
+    # 上会卡住所有并发请求（含 SSE 流），落盘同样移入线程池。
+    import asyncio
 
-    has_text, page_count = _probe(path, suffix)
+    await asyncio.to_thread(path.write_bytes, data)
+
+    has_text, page_count = await asyncio.to_thread(_probe, path, suffix)
     if page_count > settings.max_pages:
-        store.remove_upload(file_id)
+        # 第十二轮修复（实证 P2 临时文件泄漏）：原实现调用
+        # store.remove_upload(file_id)，但 add_upload 尚未执行（entry 不存在，
+        # pop 不到），超限文件永远留在磁盘上。直接删文件本身。
+        path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail=f"合同超过 {settings.max_pages} 页上限")
 
     store.add_upload(file_id, path, file.filename or "", contract_type)
