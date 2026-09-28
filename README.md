@@ -25,14 +25,14 @@ contractlens/
 │   ├── routers/         # upload / analyze(SSE) / script / report
 │   ├── parser/          # pdf/docx 解析 + 条款切分（零 LLM 依赖）
 │   ├── engine/          # rule_engine / llm_engine / fusion / retriever / scoring
-│   ├── rules/           # rent.yaml / labor.yaml / intern.yaml（80 条规则）
+│   ├── rules/           # rent.yaml / labor.yaml / intern.yaml（74 条规则）
 │   ├── report/          # 谈判话术 + 报告导出（md/docx/pdf）
 │   └── schemas/         # Pydantic 数据模型
 ├── web/                 # React 前端
 ├── data/
 │   ├── regulations/     # 法规片段（rent/labor/intern.json）
 │   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（160 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
+├── tests/               # 单元 + 集成测试（收集 176 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
 ├── scripts/             # make_sample_docx.py（生成可上传的样本）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
@@ -145,7 +145,7 @@ pytest -q
 
 | 官方维度 | 本项目落点 |
 |---|---|
-| 过程可复现性（25%） | mock 模式零 Key 跑通 + 10 分钟复现 + `docs/prompt-log/`（4 条完整链）+ **28 次细粒度提交** |
+| 过程可复现性（25%） | mock 模式零 Key 跑通 + 10 分钟复现 + `docs/prompt-log/`（4 条完整链）+ **30+ 次细粒度提交** |
 | 解题有效性（25%） | 真实痛点（毕业生租房/签约）+ 完整产品闭环 |
 | 方法创新（20%） | 规则 + LLM 双引擎融合，对 AI 黑盒的工程约束（见 `docs/技术文档.md`） |
 | 工程质量（15%） | 分层解耦，解析层/规则层零 LLM 依赖，可独立测试 |
