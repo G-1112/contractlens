@@ -1,18 +1,18 @@
 import { useCallback, useRef, useState } from "react";
 import { uploadFile } from "../api";
 import { useStore } from "../store/useStore";
-import type { ContractTypeInput } from "../types";
+import type { ContractType } from "../types";
 
-const CONTRACT_TYPES: { value: ContractTypeInput; label: string; desc: string }[] = [
-  // 第十三轮「合同类型自动分类」：解析正文特征词后定型，用户无需判断合同属于哪类
-  { value: "auto", label: "自动识别", desc: "按正文自动判断" },
+const CONTRACT_TYPES: { value: ContractType; label: string; desc: string }[] = [
   { value: "rent", label: "房屋租赁", desc: "租房合同" },
   { value: "labor", label: "劳动合同", desc: "入职合同" },
   { value: "intern", label: "实习协议", desc: "实习协议" },
+  { value: "loan", label: "借款合同", desc: "民间借贷/消费贷" },
+  { value: "guarantee", label: "保证担保", desc: "担保/保证合同" },
 ];
 
 export default function UploadPage() {
-  const { contractType, setFile, setUploadInfo, setStage, setError, setPdfData, reset } =
+  const { contractType, setFile, setUploadInfo, setStage, setError, reset } =
     useStore();
   const [file, setFileState] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -33,10 +33,6 @@ export default function UploadPage() {
       const res = await uploadFile(file, contractType);
       setFile(res.file_id, res.contract_type, res.filename);
       setUploadInfo({ page_count: res.page_count, has_text_layer: res.has_text_layer });
-      // PDF 留一份本地字节给报告页的画布渲染（服务端分析完即删，不落盘）
-      setPdfData(
-        file.name.toLowerCase().endsWith(".pdf") ? await file.arrayBuffer() : null,
-      );
 
       // 无文本层（通常是扫描件/图片版 PDF）：不要进入分析，否则必然失败。
       if (!res.has_text_layer) {
@@ -69,7 +65,7 @@ export default function UploadPage() {
       </div>
 
       {/* 合同类型 */}
-      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-5 grid grid-cols-3 gap-3">
         {CONTRACT_TYPES.map((t) => (
           <button
             key={t.value}
@@ -161,7 +157,7 @@ export default function UploadPage() {
       {/* 功能亮点 */}
       <div className="mt-8 grid grid-cols-3 gap-3 text-center text-sm">
         {[
-          ["规则引擎", "82 条规则库确定性判定"],
+          ["规则引擎", "80 条规则库确定性判定"],
           ["AI 语义判定", "大模型逐条解读大白话"],
           ["谈判话术", "一键生成可直接发送的话术"],
         ].map(([t, d]) => (

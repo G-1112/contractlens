@@ -1,0 +1,137 @@
+# 保证/担保合同规则库（guarantee.yaml）
+# 面向大赛「金融方向 · 合规风控」新增的合同类型
+# 视角说明：本规则库以保护「保证人」为立场（普通人常因不懂法而承担过重担保责任）。
+
+rules:
+  # ---------------- 保证方式 ----------------
+  - id: GU01
+    level: 高
+    risk_type: 保证方式
+    detect: keyword
+    keywords: ["连带责任保证", "连带保证责任", "承担连带清偿责任", "连带清偿"]
+    explanation: 约定为连带责任保证，债权人在债务到期后可直接要求保证人全额清偿，保证人不享有先诉抗辩权。
+
+  - id: GU02
+    level: 中
+    risk_type: 保证方式
+    detect: missing
+    must_contain: ["一般保证", "连带责任保证", "保证方式"]
+    explanation: 未明确约定保证方式，依法按一般保证承担保证责任，但实践中易就保证方式产生争议。
+
+  - id: GU03
+    level: 高
+    risk_type: 保证方式
+    detect: keyword
+    keywords: ["放弃先诉抗辩权", "不享有先诉抗辩权", "放弃检索抗辩权", "债权人可直接要求"]
+    explanation: 要求保证人放弃先诉抗辩权，实质上等同于加重保证责任。
+
+  # ---------------- 保证范围 ----------------
+  - id: GU04
+    level: 高
+    risk_type: 保证范围
+    detect: keyword
+    keywords: ["包括但不限于本金、利息", "本金、利息、违约金、损害赔偿金", "实现债权的一切费用", "所有相关费用"]
+    explanation: 保证范围涵盖本金、利息、违约金及实现债权的全部费用，保证人责任边界极宽。
+
+  - id: GU05
+    level: 高
+    risk_type: 保证范围
+    detect: keyword
+    keywords: ["无限连带责任", "无限额担保", "不设最高限额", "以全部财产承担"]
+    explanation: 约定无限额担保，保证人以全部财产承担责任，风险敞口 unbounded。
+
+  - id: GU06
+    level: 中
+    risk_type: 保证范围
+    detect: missing
+    must_contain: ["保证范围", "担保范围", "保证责任范围"]
+    explanation: 未约定保证范围，依法涵盖主债权及利息、违约金、损害赔偿金和实现债权的费用。
+
+  # ---------------- 保证期间 ----------------
+  - id: GU07
+    level: 高
+    risk_type: 保证期间
+    detect: missing
+    must_contain: ["保证期间", "担保期间", "保证期限", "担保期限"]
+    explanation: 未约定保证期间，依法为主债务履行期限届满之日起六个月，保证人须自行留意时效。
+
+  - id: GU08
+    level: 高
+    risk_type: 保证期间
+    detect: keyword
+    keywords: ["保证期间为主债务履行期限届满之日起两年", "保证期间至全部债务清偿完毕", "保证期间直至本息还清"]
+    explanation: 保证期间约定过长或与主债务存续期绑定，保证责任长期悬置。
+
+  - id: GU09
+    level: 中
+    risk_type: 保证期间
+    detect: keyword
+    keywords: ["保证期间约定不明", "保证期间由债权人确定"]
+    explanation: 保证期间约定不明确或由债权人单方确定，保证人责任期限不确定。
+
+  # ---------------- 主合同变更与转让 ----------------
+  - id: GU10
+    level: 高
+    risk_type: 主合同变更
+    detect: keyword
+    keywords: ["主合同变更无需保证人同意", "无需保证人书面同意", "主合同变更不影响保证责任"]
+    explanation: 主合同变更（尤其是加重债务）未经保证人书面同意仍要求其担责，与法律规定相抵触。
+
+  - id: GU11
+    level: 中
+    risk_type: 主合同变更
+    detect: keyword
+    keywords: ["债权人转让债权无需通知", "债权转让不影响保证责任", "保证人放弃异议"]
+    explanation: 债权转让未通知保证人的，对保证人不发生效力；此类约定可能被认定为无效。
+
+  # ---------------- 追偿与并列担保 ----------------
+  - id: GU12
+    level: 中
+    risk_type: 追偿
+    detect: missing
+    must_contain: ["追偿", "追索", "向债务人追偿"]
+    explanation: 未约定保证人承担保证责任后的追偿权，保证人代偿后向债务人追偿无明确依据。
+
+  - id: GU13
+    level: 中
+    risk_type: 追偿
+    detect: keyword
+    keywords: ["共同保证人承担连带责任", "各保证人连带", "保证人之间连带"]
+    explanation: 多个保证人之间约定连带，任一保证人可能被要求承担全部责任后再自行分摊。
+
+  # ---------------- 承诺与放弃 ----------------
+  - id: GU14
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["不可撤销", "无条件不可撤销", "放弃一切抗辩", "放弃抗辩权", "不提出任何异议"]
+    explanation: 要求保证人不可撤销地放弃全部抗辩权，属明显加重保证人责任的条款。
+
+  - id: GU15
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["授权债权人直接扣划", "授权扣划账户", "直接划扣存款", "无需通知即可扣划"]
+    explanation: 授权债权人直接扣划保证人账户资金，缺少程序约束与异议渠道。
+
+  # ---------------- 缺失项 ----------------
+  - id: GU16
+    level: 高
+    risk_type: 其他
+    detect: missing
+    must_contain: ["主债权", "被担保的主债权", "主债务", "借款"]
+    explanation: 未明确被担保的主债权种类与数额，保证责任所指向的债务不清。
+
+  - id: GU17
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["债务人", "借款人", "被保证人"]
+    explanation: 未明确债务人身份，保证人为谁的债务担责缺少依据。
+
+  - id: GU18
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["履行期限", "债务履行期限", "还款期限", "期限"]
+    explanation: 未约定主债务履行期限，保证期间的起算点无法确定。

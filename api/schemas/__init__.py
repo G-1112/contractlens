@@ -11,10 +11,7 @@ from pydantic import BaseModel, Field
 
 # 风险等级。规范全项目用中文常量，避免"high/medium/low"字符串混用。
 RiskLevel = Literal["高", "中", "低", "无"]
-ContractType = Literal["rent", "labor", "intern"]
-# 第十三轮「合同类型自动分类」：上传请求/回显层允许 auto（分析时解析正文后定型）。
-# 注意 ParsedDocument 等内部结构仍用 ContractType——auto 不得流入规则引擎。
-ContractTypeOrAuto = Literal["rent", "labor", "intern", "auto"]
+ContractType = Literal["rent", "labor", "intern", "loan", "guarantee"]
 
 
 # ---------------------------------------------------------------------------
@@ -114,7 +111,6 @@ class AnalysisReport(BaseModel):
     talk_scripts: list[str] = Field(default_factory=list)
     injection_flagged: bool = False  # 任一条款疑似 Prompt 注入（安全创新点 R-INJ-01）
     clause_count: int = 0
-    truncated: bool = False  # 条款超限只分析前 N 条时置真（ANALYZE_MAX_CLAUSES）
     risk_counts: dict[str, int] = Field(
         default_factory=lambda: {"高": 0, "中": 0, "低": 0, "无": 0}
     )
@@ -125,8 +121,7 @@ class UploadResult(BaseModel):
     file_id: str
     has_text_layer: bool
     page_count: int
-    # 回显用户选择：可能是 auto（精确判定在 /api/analyze 解析后进行）
-    contract_type: ContractTypeOrAuto = "rent"
+    contract_type: ContractType = "rent"
     filename: str = ""
 
 

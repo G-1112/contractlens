@@ -1,0 +1,157 @@
+# 借款合同规则库（loan.yaml）
+# 面向大赛「金融方向 · 合规风控」新增的合同类型
+# detect 三类：keyword 关键词匹配 / threshold 数值阈值 / missing 缺失检测（文档级）
+# 说明：利率红线以「合同成立时一年期 LPR 四倍」为准（民间借贷司法解释），
+#       规则内阈值取 24/36 两档作为确定性代理指标，解释文案中提示以 LPR 四倍为准。
+
+rules:
+  # ---------------- 利率 ----------------
+  - id: LO01
+    level: 高
+    risk_type: 利率
+    detect: threshold
+    anchor: 年利率
+    unit: "%"
+    operator: gt
+    threshold: 24
+    ratio: false
+    explanation: 约定年利率超过 24%，明显超出司法保护区间（以合同成立时一年期 LPR 四倍为准，超出部分不受保护）。
+
+  - id: LO02
+    level: 中
+    risk_type: 利率
+    detect: threshold
+    anchor: 年利率
+    unit: "%"
+    operator: gt
+    threshold: 12
+    ratio: false
+    explanation: 约定年利率超过 12%，需核对是否超过合同成立时一年期 LPR 四倍，超出部分不受法律保护。
+
+  - id: LO03
+    level: 高
+    risk_type: 利率
+    detect: keyword
+    keywords: ["砍头息", "利息预先扣除", "预先扣除利息", "从本金中预扣", "预扣利息"]
+    explanation: 利息预先在本金中扣除（砍头息），应按实际借款数额返还并计算利息。
+
+  - id: LO04
+    level: 高
+    risk_type: 利率
+    detect: keyword
+    keywords: ["利滚利", "复利计息", "利息计入本金", "逾期利息计入本金", "按月计收复利"]
+    explanation: 约定复利（利滚利）计息，易使债务快速膨胀，司法实践中受严格限制。
+
+  - id: LO05
+    level: 中
+    risk_type: 利率
+    detect: keyword
+    keywords: ["手续费", "服务费", "管理费", "咨询费", "中介费", "平台费"]
+    negate: ["已包含在年利率内", "不另收取"]
+    explanation: 在本金利息之外另收多项费用，可能变相抬高综合融资成本，需核算实际年化利率。
+
+  - id: LO06
+    level: 中
+    risk_type: 利率
+    detect: keyword
+    keywords: ["利率由甲方调整", "甲方有权调整利率", "利率随行就市", "单方调整利率"]
+    negate: ["经双方协商", "经乙方同意", "书面确认"]
+    explanation: 利率可由出借方单方调整，借款成本不可控。
+
+  # ---------------- 逾期与违约 ----------------
+  - id: LO07
+    level: 高
+    risk_type: 违约金
+    detect: keyword
+    keywords: ["逾期违约金每日", "每日按未还金额的", "日息千分之", "按日千分之", "日万分之五以上"]
+    explanation: 逾期违约金按日计收且费率较高，需核算年化后的实际负担水平。
+
+  - id: LO08
+    level: 高
+    risk_type: 解约
+    detect: keyword
+    keywords: ["宣布全部借款提前到期", "宣布贷款立即到期", "有权要求立即偿还全部", "全部债务提前到期"]
+    negate: ["经催告后", "逾期达到", "连续逾期"]
+    explanation: 出借方可在无实质违约情形下宣布全部借款提前到期，借款人资金链风险陡增。
+
+  - id: LO09
+    level: 中
+    risk_type: 违约金
+    detect: keyword
+    keywords: ["提前还款违约金", "提前还款需支付", "提前结清罚息", "提前还款补偿金"]
+    explanation: 约定提前还款违约金，限制了借款人提前结清、降低利息支出的权利。
+
+  # ---------------- 责任与免责 ----------------
+  - id: LO10
+    level: 高
+    risk_type: 其他
+    detect: keyword
+    keywords: ["放弃抗辩权", "不得主张抗辩", "放弃一切抗辩", "无条件承担", "不可撤销地放弃"]
+    explanation: 要求借款人放弃抗辩权/异议权，属加重对方责任的条款，可被主张无效。
+
+  - id: LO11
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["甲方不承担", "甲方概不负责", "出借方不承担", "一切风险由乙方"]
+    explanation: 免责条款过宽，出借方免除其应承担的法定责任与告知义务。
+
+  # ---------------- 信息授权与隐私 ----------------
+  - id: LO12
+    level: 中
+    risk_type: 隐私
+    detect: keyword
+    keywords: ["征信", "通讯录", "通话记录", "相册", "无限期授权"]
+    explanation: 信息授权范围过宽或期限无限，存在个人信息被过度收集与滥用的风险。
+
+  - id: LO13
+    level: 高
+    risk_type: 隐私
+    detect: keyword
+    keywords: ["共享给第三方", "信息共享给第三方", "向第三方披露", "无需另行通知"]
+    negate: ["依法", "经乙方书面同意", "司法机关"]
+    explanation: 允许出借方未经同意向第三方披露借款人信息，个人信息安全无保障。
+
+  # ---------------- 争议解决 ----------------
+  - id: LO14
+    level: 中
+    risk_type: 其他
+    detect: keyword
+    keywords: ["由甲方所在地法院管辖", "由出借方所在地法院管辖", "由贷款人住所地法院"]
+    explanation: 争议管辖地约定在出借方所在地，借款人维权成本显著增加。
+
+  # ---------------- 缺失项（该写没写） ----------------
+  - id: LO15
+    level: 高
+    risk_type: 其他
+    detect: missing
+    must_contain: ["年利率", "利率", "月利率", "利息"]
+    explanation: 未约定借款利率或利息计算方式，易就利息金额产生争议（未约定则视为无息）。
+
+  - id: LO16
+    level: 高
+    risk_type: 其他
+    detect: missing
+    must_contain: ["还款期限", "借款期限", "还款日期", "到期日", "期限"]
+    explanation: 未约定还款期限，借款人还款义务的时间边界不清。
+
+  - id: LO17
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["还款方式", "等额本息", "等额本金", "一次性还本付息", "分期"]
+    explanation: 未约定还款方式，还款节奏与每期金额无依据。
+
+  - id: LO18
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["借款用途", "用途", "用于"]
+    explanation: 未约定借款用途，出借方可能以改变用途为由主张违约。
+
+  - id: LO19
+    level: 中
+    risk_type: 其他
+    detect: missing
+    must_contain: ["逾期", "违约责任", "违约"]
+    explanation: 未约定逾期后果与违约责任，违约后的责任范围不确定。
