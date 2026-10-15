@@ -10,22 +10,9 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import logging
 from pathlib import Path
-from xml.sax.saxutils import escape as _xml_escape
 
 from ..schemas import AnalysisReport, RiskItem
-
-logger = logging.getLogger(__name__)
-
-# 合同类型中文名（PDF / Markdown 报告共用）
-_TYPE_LABELS = {
-    "rent": "房屋租赁合同",
-    "labor": "劳动合同",
-    "intern": "实习协议",
-    "loan": "借款合同",
-    "guarantee": "保证担保合同",
-}
 
 _TALK_SYSTEM = """你是合同谈判助手。根据给定条款的风险说明、修改建议与改写后的条款，
 生成一段可直接发给对方（房东/HR）的礼貌话术。要求：
@@ -315,26 +302,6 @@ class ReportGenerator:
         return tpl.render(report=r, extract_ref=_extract_ref, date=dt.date.today().isoformat())
 
     def save_pdf(self, out: str | Path) -> Path:
-        """生成 PDF 报告。
-
-        两条路径，按可用性自动选择：
-        1. weasyprint（HTML → PDF，版式保真）：需要系统图形库
-           （Linux 需 pango/cairo，Windows 需 GTK 运行时），装不上就跳过；
-        2. reportlab + 内置 CID 字体（结构化绘制）：纯 Python wheel、
-           零系统依赖、无需字体文件即可渲染中文。
-
-        为什么需要降级：PDF 导出曾因 weasyprint 不可用而完全打不开
-        （本地与部署沙箱都缺系统库），而这是评审演示的常用入口。
-        """
-        out = Path(out)
-        try:
-            return self._save_pdf_weasyprint(out)
-        except Exception as e:  # noqa: BLE001 缺库/缺系统图形库 → 降级
-            logger.warning("weasyprint 渲染不可用（%s），降级为 reportlab 生成 PDF", e)
-            return self._save_pdf_reportlab(out)
-
-    # ------------------------------------------------------------------
-    def _save_pdf_weasyprint(self, out: Path) -> Path:
         """HTML → PDF（需 weasyprint）。
 
         安全（R-SSRF-01）：显式传入受限 url_fetcher，仅允许内联 data: 资源，
@@ -343,6 +310,7 @@ class ReportGenerator:
         from weasyprint import HTML  # 延迟导入
 
         html = self.to_html()
+        out = Path(out)
 
         def _safe_url_fetcher(url: str, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
             if url.startswith("data:"):
@@ -356,94 +324,6 @@ class ReportGenerator:
         except TypeError:
             # 兼容不接受 url_fetcher 参数的旧版本 weasyprint
             HTML(string=html).write_pdf(str(out))
-        return out
-
-    # ------------------------------------------------------------------
-    def _save_pdf_reportlab(self, out: Path) -> Path:
-        """reportlab 结构化绘制 PDF（weasyprint 不可用时的保底路径）。
-
-        中文用 reportlab 内置的 Adobe CID 字体 STSong-Light —— 不需要任何
-        外部 .ttf，因此在没有中文字体文件的 Linux 容器里也能正常渲染。
-        """
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4
-        from reportlab.lib.styles import ParagraphStyle
-        from reportlab.lib.units import mm
-        from reportlab.pdfbase import pdfmetrics
-        from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-        from reportlab.pdfgen import canvas as _canvas  # noqa: F401  保持依赖可见
-        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
-
-        pdfmetrics.registerFont(UnicodeCIDFont("STSong-Light"))
-        r = self.report
-
-        h1 = ParagraphStyle("h1", fontName="STSong-Light", fontSize=18, leading=26, spaceAfter=4)
-        meta = ParagraphStyle(
-            "meta", fontName="STSong-Light", fontSize=10, leading=16, textColor=colors.HexColor("#475569")
-        )
-        body = ParagraphStyle("body", fontName="STSong-Light", fontSize=10, leading=16)
-        item_title = ParagraphStyle(
-            "it",
-            fontName="STSong-Light",
-            fontSize=11,
-            leading=17,
-            spaceBefore=10,
-            textColor=colors.HexColor("#1d4ed8"),
-        )
-        small = ParagraphStyle(
-            "small", fontName="STSong-Light", fontSize=8, leading=12, textColor=colors.HexColor("#64748b")
-        )
-
-        counts = r.risk_counts or {}
-        story = [
-            Paragraph("合同审查报告", h1),
-            Paragraph(
-                f"合同类型：{_TYPE_LABELS.get(r.contract_type, r.contract_type)}"
-                f" · 条款 {r.clause_count} 条 · 生成日期 {dt.date.today().isoformat()}",
-                meta,
-            ),
-            Spacer(1, 4),
-            Paragraph(f"综合评分：<b>{r.total_score}</b> / 100（{r.overall_level}风险）", body),
-            Paragraph(
-                f"风险分布：高 {counts.get('高', 0)} · 中 {counts.get('中', 0)} · 低 {counts.get('低', 0)}",
-                meta,
-            ),
-        ]
-
-        for it in r.items:
-            if it.final_level == "无":
-                continue
-            ref = _extract_ref(it)
-            story.append(
-                Paragraph(
-                    _xml_escape(f"第{ref}条 {it.risk_type or '风险条款'}（{it.final_level}风险）"), item_title
-                )
-            )
-            if it.explain:
-                story.append(Paragraph(_xml_escape(it.explain), body))
-            if it.suggest:
-                story.append(Paragraph(f"<b>建议：</b>{_xml_escape(it.suggest)}", body))
-            if it.rewrite:
-                story.append(Paragraph(f"<b>改为：</b>{_xml_escape(it.rewrite)}", body))
-            if it.regulation_refs:
-                story.append(
-                    Paragraph("依据：" + _xml_escape("；".join(it.regulation_refs)), small)
-                )
-
-        story.append(Spacer(1, 14))
-        story.append(Paragraph(_xml_escape(r.disclaimer), small))
-
-        doc = SimpleDocTemplate(
-            str(out),
-            pagesize=A4,
-            leftMargin=20 * mm,
-            rightMargin=20 * mm,
-            topMargin=18 * mm,
-            bottomMargin=18 * mm,
-            title="合同审查报告",
-            author="契约眼 ContractLens",
-        )
-        doc.build(story)
         return out
 
 

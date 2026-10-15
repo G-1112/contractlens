@@ -119,8 +119,8 @@ def test_concurrent_speedup(monkeypatch):
         return LlmJudgement(clause_id=clause.id, risk_level="无")
 
     # 直接 patch 类对象（与 pipeline 引用的同一 LlmEngine）
-    from api.config import get_settings
     from api.engine import llm_engine as le_mod
+    from api.config import get_settings
 
     monkeypatch.setattr(le_mod.LlmEngine, "judge", _fake_judge)
 

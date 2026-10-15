@@ -69,27 +69,3 @@ def test_radar_dimensions_present(name: str, ctype: str):
     report = _run(parsed)
     assert len(report.radar_dimensions) == 5
     assert set(report.radar.keys()) == set(report.radar_dimensions)
-
-
-def test_skip_talk_scripts_keeps_scoring_intact():
-    """generate_scripts=False：话术为空，但风险条目与总分必须与内联路径一致。
-
-    背景：真实 LLM 下话术生成是第二个 LLM 波次（实测 3~5s），内联会显著推后
-    SSE `done` 事件。改为报告页按需调POST /api/script 后，必须保证分析结果本身
-    不受影响——否则「更快拿到报告」会以牺牲结论完整性为代价。
-    """
-    parsed = _load("房屋租赁合同样本.txt", "rent")
-    with_scripts = _run(parsed)
-    without_scripts = asyncio.run(
-        run_analysis(parsed, parsed.contract_type, "test", generate_scripts=False)
-    )
-
-    assert without_scripts.talk_scripts == [], "跳过话术时应为空，由前端按需补生成"
-    assert without_scripts.total_score == with_scripts.total_score
-    assert len(without_scripts.items) == len(with_scripts.items)
-    assert [it.clause_id for it in without_scripts.items] == [
-        it.clause_id for it in with_scripts.items
-    ]
-    assert [it.final_level for it in without_scripts.items] == [
-        it.final_level for it in with_scripts.items
-    ]

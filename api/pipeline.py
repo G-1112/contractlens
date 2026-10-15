@@ -9,13 +9,11 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from pathlib import Path
 from typing import AsyncIterator, Callable
 
 from .config import get_settings
 from .engine import FusionEngine, LlmEngine, RegulationRetriever, RuleEngine
-from .engine.llm_engine import detect_injection
 from .engine.scoring import score_report
 from .parser import DocxParser, PdfParser, split_clauses
 from .report.generator import generate_talk_scripts
@@ -28,8 +26,6 @@ from .schemas import (
     RiskItem,
     RuleHit,
 )
-
-logger = logging.getLogger(__name__)
 
 # SSE 事件类型
 Event = dict
@@ -91,12 +87,6 @@ def detect_contract_type(filename: str) -> str:
         return "intern"
     if any(k in name for k in ("劳动", "labor", "用工", "劳务")):
         return "labor"
-    # 金融类（大赛方向）：保证/担保优先于借款判定，
-    # 因为「担保合同」「保证合同」常同时含「借款」字样。
-    if any(k in name for k in ("担保", "保证", "guarantee")):
-        return "guarantee"
-    if any(k in name for k in ("借款", "借贷", "贷款", "loan", "借据", "欠条")):
-        return "loan"
     if any(k in name for k in ("租", "rent")):
         return "rent"
     return "rent"
@@ -131,63 +121,10 @@ def _build_missing_items(clauses: list[Clause], missing_hits: list[RuleHit]) -> 
     return items
 
 
-def _build_injection_items(clauses: list[Clause], existing: list[RiskItem]) -> list[RiskItem]:
-    """提示注入预检（R-INJ-01，大赛创新点）。
-
-    与风险判定解耦：无论该条款是否被判为风险，只要命中注入特征就合成一条
-    「注入警示」条目。原因（实测发现）：注入文本常藏在无风险条款里（如免责
-    声明末尾的白色小字），若只在 llm judgement 上打标，而该条款未被判风险
-    就不会生成 item，文档级 injection_flagged 会漏报 —— 演示时评委看不到
-    任何警示。这里做全量扫描兜底。
-    """
-    seen = {it.clause_id for it in existing}
-    items: list[RiskItem] = []
-    for c in clauses:
-        if c.id in seen:
-            continue
-        hits = detect_injection(c.text)
-        if not hits:
-            continue
-        frag = "、".join(hits[:3])
-        items.append(
-            RiskItem(
-                clause_id=c.id,
-                clause_text=c.text[:200],
-                page=c.page,
-                final_level="中",
-                source="rule_only",
-                risk_type="注入风险",
-                explain=(
-                    f"该条款包含疑似提示注入内容（{frag}），可能试图操纵 AI 判定结果。"
-                    "系统已对该内容做隔离处理，本条判定结果仅作参考，请人工复核。"
-                ),
-                suggest="删除合同中与正文无关的指令性文字后重新上传；如系对方提供，建议要求其说明该内容来源。",
-                rewrite="",
-                regulation_refs=[],
-                rule_ids=[],
-                injection_suspected=True,
-            )
-        )
-    return items
-
-
 async def run_analysis_streaming(
-    parsed: ParsedDocument,
-    contract_type: str,
-    file_id: str,
-    emit: Sink | None = None,
-    *,
-    generate_scripts: bool = True,
+    parsed: ParsedDocument, contract_type: str, file_id: str, emit: Sink | None = None
 ) -> AnalysisReport:
-    """主流水线，逐条推送 SSE 事件，返回最终报告。
-
-    generate_scripts=False 时跳过谈判话术生成，让 `done` 事件更早到达；
-    前端拿到报告后按需调 POST /api/script 补生成。判定与评分不受影响。
-
-    实测（真实 LLM，deepseek-chat，并发 8，借款合同 12 条款 5 条话术）：
-    话术波次平均 1230ms（1192/1201/1298ms三次），该耗时原本全部落在
-    `done` 之前。
-    """
+    """主流水线，逐条推送 SSE 事件，返回最终报告。"""
     settings = get_settings()
     clauses = parsed.clauses
     total = len(clauses)
@@ -244,33 +181,20 @@ async def run_analysis_streaming(
     # 3) 融合 + 逐条推送风险事件
     items = fusion.fuse(clauses, [h for h in rule_hits if not h.clause_id.startswith("missing-")], judgements, reg_refs)
     items += _build_missing_items(clauses, missing_hits)
-    items += _build_injection_items(clauses, items)
 
     for it in items:
         if it.final_level != "无":
             emit({"type": "risk", "data": it.model_dump()})
 
-    # 4) 评分（+ 可选话术）
+    # 4) 评分 + 话术
     emit({"type": "progress", "stage": "score", "current": total, "total": total})
-    scripts: list[str] = []
-    if generate_scripts:
-        scripts = await generate_talk_scripts(items, llm)
-    else:
-        logger.info("跳过内联话术生成，按需调用 POST /api/script（file_id=%s）", file_id)
+    scripts = await generate_talk_scripts(items, llm)
     report = score_report(file_id, contract_type, items, scripts, clause_count=total)
 
     emit({"type": "done", "report": report.model_dump()})
     return report
 
 
-async def run_analysis(
-    parsed: ParsedDocument,
-    contract_type: str,
-    file_id: str,
-    *,
-    generate_scripts: bool = True,
-) -> AnalysisReport:
+async def run_analysis(parsed: ParsedDocument, contract_type: str, file_id: str) -> AnalysisReport:
     """非流式入口（测试/脚本用），内部复用流式实现。"""
-    return await run_analysis_streaming(
-        parsed, contract_type, file_id, emit=None, generate_scripts=generate_scripts
-    )
+    return await run_analysis_streaming(parsed, contract_type, file_id, emit=None)

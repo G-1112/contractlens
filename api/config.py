@@ -17,66 +17,17 @@ RULES_DIR = ROOT_DIR / "api" / "rules"
 REGULATIONS_DIR = DATA_DIR / "regulations"
 
 
-def _load_env_file(path: Path) -> None:
-    """把 .env 中的 KEY=VALUE 注入环境变量（不覆盖已存在的变量）。
-
-    为什么需要：.env.example 随仓库提供，但此前没有任何加载逻辑 ——
-    用户按模板复制出 .env 并填好 Key 后服务仍静默退回 mock 模式，
-    排错时完全看不出原因。
-
-    实现取舍：只解析 KEY=VALUE（跳过注释/空行/无等号行），不引入
-    python-dotenv，避免为读这几个变量给「10 分钟极速复现」加依赖。
-    环境变量优先于 .env，便于 CI / 部署平台直接注入覆盖。
-    """
-    if not path.is_file():
-        return
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return
-    for raw in text.splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, _, value = line.partition("=")
-        key = key.strip()
-        if not key:
-            continue
-        value = value.strip().strip('"').strip("'")
-        os.environ.setdefault(key, value)
-
-
-_load_env_file(ROOT_DIR / ".env")
-
-
 class Settings:
     """运行时设置。"""
 
     # ---- LLM ----
-    _llm_api_key: str = os.getenv("LLM_API_KEY", "").strip()
+    llm_api_key: str = os.getenv("LLM_API_KEY", "").strip()
     llm_base_url: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com").strip()
     llm_model: str = os.getenv("LLM_MODEL", "deepseek-chat").strip()
     llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", "0"))
     llm_max_retries: int = int(os.getenv("LLM_MAX_RETRIES", "2"))
     llm_timeout_seconds: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
     llm_concurrency: int = int(os.getenv("LLM_CONCURRENCY", "8"))  # 并发判定上限（性能关键）
-
-    # 公网部署保险丝：置1 后**强制离线**，即便目录里意外带了 .env 也不会用到 Key。
-    # 背景：部署工具压缩整个项目目录上传（只排除 node_modules/.git/构建产物），
-    # .gitignore拦不住 .env——真实 Key 会被一起上传并生效，公网任意用户即可
-    # 触发调用烧额度。公网实例一律不挂 Key，演示走 mock（规则引擎全量生效，
-    # 与 LLM 无关的确定性部分完全一致，且更快）。
-    public_deploy: bool = os.getenv("PUBLIC_DEPLOY", "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
-
-    # LLM 日配额（公网挂真实 Key 时的成本刹车）。0 = 不限（本地开发）。
-    # 与每分钟 IP 限流叠加：反代后 IP 限流实际是全局的，但窗口只有 60s，
-    # 没有这道按天闸门，理论上一天能打到近 3 万次调用。
-    llm_daily_budget: int = int(os.getenv("LLM_DAILY_BUDGET", "0"))
 
     # ---- 检索器 ----
     use_vector_db: bool = os.getenv("USE_VECTOR_DB", "false").strip().lower() in {
@@ -93,43 +44,14 @@ class Settings:
     upload_dir: Path = Path(os.getenv("UPLOAD_DIR", str(DATA_DIR / "uploads")))
     max_upload_bytes: int = int(os.getenv("MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
-    # ---- 评审访问 ----
-    # 《作品提交说明》四要求提交智能体链接及账号密码供评审使用。本项目不做
-    # 账号系统（不采集个人信息），改为一道共享访问口令：
-    #   - 留空（默认）= 不启用门禁，本地开发与既有测试行为完全不变；
-    #   - 设置后，/api/* 业务端点需带 X-Review-Code 头或 ?code= 参数。
-    review_access_code: str = os.getenv("REVIEW_ACCESS_CODE", "").strip()
-    # 登录界面的账号（第十四轮，区域赛升级）：与 review_access_code 组成
-    # 「账号 + 密码」对，供平台表单「账号/密码」栏与 /api/login 校验。
-    # 未设置时默认 reviewer；密码即 review_access_code。
-    review_username: str = os.getenv("REVIEW_USERNAME", "reviewer").strip()
-    # 会话令牌有效期（秒，默认 2 小时）。登录返回 HMAC 签名令牌，过期需重新登录；
-    # 令牌可过期/不可伪造，替代"明文口令当 token 用"（第十五轮安全升级 R-AUTH-03）。
-    review_session_ttl: int = int(os.getenv("REVIEW_SESSION_TTL", "7200"))
-
     # ---- 业务 ----
     max_pages: int = 30  # 单份合同页数上限
     rag_top_k: int = 3  # 每条款检索法规片段数
     max_clause_chars: int = 2000  # 单条超长条款截断，控制 token 成本
 
     @property
-    def llm_api_key(self) -> str:
-        """公网部署下**始终返回空串**：Key 连读都不允许，杜绝误用。"""
-        if self.public_deploy:
-            return ""
-        return self._llm_api_key
-
-    @llm_api_key.setter
-    def llm_api_key(self, value: str) -> None:
-        # 保留可写性：既有测试与脚本会直接赋值设置 Key。公网模式下写入的值
-        # 依旧读不出来（getter 短路），这里只保证 API 不被破坏。
-        self._llm_api_key = (value or "").strip()
-
-    @property
     def llm_enabled(self) -> bool:
-        """是否启用真实 LLM（有key 才启用，否则降级为 mock 规则判定）。"""
-        if self.public_deploy:
-            return False
+        """是否启用真实 LLM（有 key 才启用，否则降级为 mock 规则判定）。"""
         return bool(self.llm_api_key)
 
     @property

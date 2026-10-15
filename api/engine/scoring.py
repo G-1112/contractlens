@@ -12,9 +12,6 @@ from ..schemas import AnalysisReport, RiskItem, RiskLevel
 # 风险等级扣分
 _LEVEL_PENALTY: dict[RiskLevel, float] = {"高": 20.0, "中": 8.0, "低": 2.0, "无": 0.0}
 
-# 总分饱和系数（R-SCORE-01）：扣分累计到 K 时总分恰好为 50
-_TOTAL_SATURATION_K = 60.0
-
 # 每个合同类型的五个雷达维度（顺序即前端展示顺序）
 _DIMENSIONS: dict[str, list[str]] = {
     "rent": ["押金", "解约", "维修", "违约", "隐私"],
@@ -121,28 +118,6 @@ def _dim_of(contract_type: str, item: RiskItem) -> str | None:
     return None
 
 
-def saturate_total(raw_penalty: float) -> int:
-    """把累计扣分映射为 0-100 的合同总分（R-SCORE-01）。
-
-    为什么不用线性（100 - P）：高风险每条扣 20 分，命中 5 条即扣满 100 归零。
-    实测五个内置样本全部落到 0-22 分区间、等级一律「高」，借款/保证两型直接
-    归零 —— 演示时任何一份合同都显示「高风险 0 分」，评分体系彻底失去区分度。
-
-    改用双曲饱和：
-
-        total = 100 * K / (P + K)
-
-    - P=0 → 100；P=K(=60) → 50；P→∞ → 0⁺
-    - 严格单调递减且永不取到 0，风险再多的合同也能相互比较
-    - 保持确定性（同一份合同重复分析得分一致）
-
-    代价：中低风险区间的分数比线性更「宽容」（如 1 条高风险 75 分而非 80），
-    换取的是重风险区间的区分度。等级阈值（<40 高 / <70 中）保持不变。
-    """
-    total = 100.0 * _TOTAL_SATURATION_K / (raw_penalty + _TOTAL_SATURATION_K)
-    return int(max(1, min(100, round(total))))
-
-
 def score_report(
     file_id: str,
     contract_type: str,
@@ -150,25 +125,21 @@ def score_report(
     talk_scripts: list[str],
     clause_count: int,
 ) -> AnalysisReport:
-    """由风险条目计算总分 / 等级 / 雷达。
-
-    总分走饱和映射（见 saturate_total），雷达维度仍用线性扣分：
-    雷达要回答「问题集中在哪个维度」，线性对单维度堆积更敏感。
-    """
+    """由风险条目计算总分 / 等级 / 雷达。"""
     dims = _DIMENSIONS.get(contract_type, _DIMENSIONS["rent"])
-    raw_penalty = 0.0
+    total = 100.0
     dim_penalty = {d: 0.0 for d in dims}
 
     for item in items:
         if item.final_level == "无":
             continue
         penalty = _LEVEL_PENALTY[item.final_level]
-        raw_penalty += penalty
+        total -= penalty
         dim = _dim_of(contract_type, item)
         if dim is not None:
             dim_penalty[dim] += penalty
 
-    total = saturate_total(raw_penalty)
+    total = int(max(0, min(100, round(total))))
     overall: RiskLevel = "低"
     if total < 40:
         overall = "高"

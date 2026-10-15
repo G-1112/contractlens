@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import logging
 import re
 from typing import Any
 
@@ -18,13 +17,7 @@ from pydantic import ValidationError
 
 from ..schemas import Clause, LlmJudgement
 
-logger = logging.getLogger(__name__)
-
 # 系统 Prompt（对应文档第 8 节，版本化管理见 docs/prompt-log/）
-# v13（2026-11-24，区域赛收敛迭代）：新增「风险判定门槛」——v12 实测（真实集
-# 439 条，dev 13 份）LLM 把中性程序性条款（通知、不可抗力、生效、文本份数）与
-# 保护性条款（"不得收取×××"）也标为中/低风险，P 仅 0.35；门槛后要求
-# 宁缺毋滥，把判定重心收敛到"乙方会不会吃亏"。
 _SYSTEM_PROMPT = """你是合同条款风险审查助手。对给定条款输出严格 JSON，不要输出其他任何内容。
 
 字段：
@@ -34,32 +27,6 @@ _SYSTEM_PROMPT = """你是合同条款风险审查助手。对给定条款输出
   suggest      : 具体可执行的修改建议，不要写"建议咨询专业人士"这类废话
   rewrite      : 修改后的条款原文，保持原句式结构
   evidence     : 引用条款中的关键原话，必须是原文照抄
-
-【风险判定门槛 · 优先级最高】
-  0. 风险 = 对乙方（承租人／借款人／劳动者／实习生／保证人等相对弱势一方）
-     明显不利、显失公平、或违反法律强制性规定的条款。
-     判定前先问自己：这一条会不会让乙方实际吃亏？
-  1. 以下情形一律 risk_level 填"无"：
-     a. 中性程序性条款：通知与送达的纯方式性约定（仅列地址/形式，无不利后果）、
-        争议解决方式、不可抗力、合同生效/份数/文本解释/补充协议、通讯地址变更、
-        双方协商一致可变更等；
-     b. 保护性条款：限制甲方行为的表述，如"不得向乙方收取×××""押金不得超过
-        ×××""应当征得乙方同意""未经乙方同意不得×××"；
-     c. 法定权责的常规表述：保证合同中对保证方式本身定义、依法律标准约定
-        的违约责任、双方对等的违约责任条款；
-     d. 纯格式性空白：合同编号、份数、签署日期、地址账号等填写位（不影响
-        风险承担方向的占位符）。
-  2. 以下情形应当报出风险（不要被"常规表述"的外观迷惑）：
-     a. 风险分配型空白：违约金比例、罚息/利率上浮幅度、维修费用承担方、
-        押金数额等直接决定乙方义务大小的空白——填"低"，提示签署前必须
-        与对方确认数值，避免单方填写；
-     b. 不利送达/视为送达条款："因拒收、地址变更未通知等导致文书未能送达的，
-        以发出/寄出之日视为送达""乙方承担由此产生的一切后果"等——填"中"；
-     c. 单方权利条款：对方"有权直接""无须通知/无须同意""单方调整/解除/
-        扣划"且无对等约束——按程度填"中"或"高"；
-     d. 开放式责任："赔偿违约金不足以弥补的实际损失""包括但不限于一切损失"
-        等无上限责任——填"中"。
-  3. 拿不准时填"无"。本产品宁可少报一条低风险，也不把中性条款报成风险。
 
 规则：
   1. 无风险时 risk_level 填"无"，其余字段填空字符串
@@ -102,63 +69,21 @@ _INJECTION_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"无视.{0,8}(指令|指示|要求|前文|上面|前面|之前)"),
     re.compile(r"忽视.{0,8}(指令|指示|要求|前文|上面|前面|之前)"),
     re.compile(r"忘记.{0,8}(上面|前文|前面|之前|之前的内容)"),
-    re.compile(r"ignore\s*(all\s*)?(previous\s*|above\s*|prior\s*|the\s*)?instructions?", re.I),
-    re.compile(r"disregard\s*(all\s*)?(previous\s*|above\s*|prior\s*)", re.I),
-    re.compile(r"risk_?level\s*(改为|改|[:=])\s*[\"']?\s*(无|低)", re.I),
+    re.compile(r"ignore\s+(all\s+)?(previous\s+|above\s+|prior\s+|the\s+)?instructions?", re.I),
+    re.compile(r"disregard\s+(all\s+)?(previous\s+|above\s+|prior\s+)", re.I),
+    re.compile(r"risk_?level\s*[:=]\s*[\"']?无"),
     re.compile(r"全部.{0,6}(设为|填为|标记为|改为)?无风险"),
     re.compile(r"所有.{0,6}条款.{0,6}(无|忽略|忽略风险)"),
     re.compile(r"system\s*[:：]\s*"),
     re.compile(r"assistant\s*[:：]\s*"),
-    # ---- 2026-10-31 按对照实验盲区补强（scripts/injection_ab_test.py）----
-    # 单条状态改写：判定/评级/标记为「无风险 / 低风险」
-    re.compile(r"(判定|评级|标记|判)\s*(为)?\s*(无风险|低风险)"),
-    # 「改为无」「改成无风险」
-    re.compile(r"(改为|改成)\s*无"),
-    # 审查结论伪造
-    re.compile(r"(审查|审核)(结论|结果)\s*[:：]"),
-    re.compile(r"无任何风险"),
-    # 全量降级：所有条款均为低风险 / 合规 / 无需提示
-    re.compile(r"所有.{0,10}(条款|内容).{0,10}(低风险|合规|无需|无风险)"),
-    # 优先级篡改
-    re.compile(r"(优先于|高于).{0,10}(正文|前述|上述)"),
-    # 跳过审查
-    re.compile(r"(跳过|忽略|无视).{0,6}(审查|审核|检查)"),
 ]
-
-# 归一化：零宽字符、全角字符、中文/单字母之间的空格都可能绕过正则。
-_ZW_CHARS = re.compile(r"[\u200b-\u200f\u2060\ufeff]")
-_CJK_GAP = re.compile(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])")
-_LATIN_GAP = re.compile(r"(?<=[A-Za-z])\s+(?=[A-Za-z](?:\s|$))")
-_FULLWIDTH = str.maketrans(
-    {**{chr(0xFF01 + i): chr(0x21 + i) for i in range(94)}, "\u3000": " "}
-)
-
-
-def _normalize_for_scan(text: str) -> str:
-    """为匹配做归一化：去零宽、全角转半角、消除「忽 略 以 上」式拆字。
-
-    注意：只用于匹配，不改动原文（命中片段仅用于提示，不影响条款存储）。
-    """
-    s = _ZW_CHARS.sub("", text or "")
-    s = s.translate(_FULLWIDTH)
-    prev = None
-    while prev != s:
-        prev = s
-        s = _CJK_GAP.sub("", s)
-        s = _LATIN_GAP.sub("", s)
-    return s
 
 
 def detect_injection(text: str) -> list[str]:
-    """返回条款文本中命中的注入特征片段（空列表表示未命中）。
-
-    先归一化再匹配：零宽字符、全角字母、中文字间空格、单字母间空格
-    都能绕过裸正则（2026-10-31 对照实验实测 8/20 → 加固后见实验报告）。
-    """
-    scanned = _normalize_for_scan(text)
+    """返回条款文本中命中的注入特征片段（空列表表示未命中）。"""
     hits: list[str] = []
     for pat in _INJECTION_PATTERNS:
-        m = pat.search(scanned)
+        m = pat.search(text or "")
         if m:
             hits.append(m.group(0))
     return hits
@@ -211,15 +136,6 @@ class LlmEngine:
             base_url=self.settings.llm_base_url,
             timeout=self.settings.llm_timeout_seconds,
         )
-        # 只记录长度与模型，**绝不记录 Key 内容**（公网部署时排障需要知道
-        # 「Key 有没有读到」，但日志会流向平台/第三方，不应携带凭据本身）。
-        logger.info(
-            "LLM 已启用 model=%s base_url=%s key_loaded=%s key_len=%d",
-            self.settings.llm_model,
-            self.settings.llm_base_url,
-            bool(self.settings.llm_api_key),
-            len(self.settings.llm_api_key),
-        )
 
     # ------------------------------------------------------------------
     async def judge(self, clause: Clause, regulations: list[str]) -> LlmJudgement:
@@ -265,34 +181,6 @@ class LlmEngine:
 
         # 重试耗尽：抛出，交由 fusion 降级
         raise LLMUnavailable(f"LLM 判定失败（重试 {self.settings.llm_max_retries} 次）: {last_err}")
-
-    # ------------------------------------------------------------------
-    async def chat(self, system: str, user: str) -> str | None:
-        """通用对话补全（追问链路用）。
-
-        与 judge 的区别：不强制 JSON，输出自然语言；mock 模式（无 client）
-        返回 None，由调用方用确定性模板回答（保证离线可演示、可复现）。
-        """
-        if not self._client:
-            return None
-
-        last_err: Exception | None = None
-        for attempt in range(self.settings.llm_max_retries + 1):
-            try:
-                resp = await self._client.chat.completions.create(
-                    model=self.settings.llm_model,
-                    temperature=self.settings.llm_temperature,
-                    messages=[
-                        {"role": "system", "content": system},
-                        {"role": "user", "content": user},
-                    ],
-                )
-                return resp.choices[0].message.content or ""
-            except Exception as e:  # noqa: BLE001 网络/超时/限流 → 重试
-                last_err = e
-                if attempt < self.settings.llm_max_retries:
-                    await asyncio.sleep(min(0.5 * (attempt + 1), 3.0))
-        raise LLMUnavailable(f"LLM 对话失败（重试 {self.settings.llm_max_retries} 次）: {last_err}")
 
     # ------------------------------------------------------------------
     def _parse(self, raw: str, clause: Clause, injection_suspected: bool = False) -> LlmJudgement:

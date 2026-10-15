@@ -126,9 +126,8 @@ def test_limiter_reset_restores_access(client):
 # ---------------------------------------------------------------- 错误信息
 def test_analyze_error_message_is_sanitized():
     """SSE error 事件不得回传异常原文（防内部路径泄露）。"""
-    import inspect
-
     from api.routers import analyze as analyze_mod
+    import inspect
 
     src = inspect.getsource(analyze_mod)
     # 断言错误载荷不含 str(e) 直接回传

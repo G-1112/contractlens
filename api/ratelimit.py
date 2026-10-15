@@ -16,16 +16,6 @@ from collections import deque
 from typing import Deque
 
 
-def _daily_budget_from_env() -> int:
-    """读 LLM_DAILY_BUDGET；用裸 os.environ 而非 config，避免模块循环依赖。"""
-    import os
-
-    try:
-        return int(os.getenv("LLM_DAILY_BUDGET", "0"))
-    except ValueError:
-        return 0
-
-
 class RateLimiter:
     """滑动窗口限流器：窗口内最多放行 max_calls 次。"""
 
@@ -84,66 +74,6 @@ analyze_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
 script_limiter = RateLimiter(max_calls=15, window_seconds=60.0)
 # 报告导出：PDF/DOCX 走 WeasyPrint 重渲染，开销大，单 IP 每分钟 20 次（R-RL-01）
 report_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
-# 追问对话：多轮交互频率高且触发 LLM 调用，单 IP 每分钟 30 次
-chat_limiter = RateLimiter(max_calls=30, window_seconds=60.0)
-
-
-class DailyBudget:
-    """按自然日的 LLM 调用总量闸门（成本兜底）。
-
-    为什么已有按 IP 限流还不够：
-    1. 反向代理后面 `request.client.host` 拿到的是代理 IP，所有访客共用一个桶
-       ——限流实际退化成全局上限，且窗口一过（60s）就重新放开；
-    2. 反代后的全局 20 次/分钟，理论上限≈2.9 万次/天，即使每次只调1 次 LLM，
-       额度也会被跑穿。
-
-    所以再加一道**按天**的总量闸门：max_calls<=0 表示不限（本地开发用），
-    公网部署必须设置。它是最后一道成本刹车，与 IP 限流叠加使用。
-    """
-
-    def __init__(self, max_calls: int = 0) -> None:
-        self.max_calls = max_calls
-        self._used = 0
-        self._day = time.strftime("%Y-%m-%d")
-
-    def _rollover(self) -> None:
-        today = time.strftime("%Y-%m-%d")
-        if today != self._day:
-            self._day, self._used = today, 0
-
-    def allow(self) -> tuple[bool, int]:
-        """返回 (是否放行, 剩余额度)。剩余为 -1 表示不限量。"""
-        self._rollover()
-        if self.max_calls <= 0:
-            self._used += 1
-            return True, -1
-        if self._used >= self.max_calls:
-            return False, 0
-        self._used += 1
-        return True, self.max_calls - self._used
-
-    @property
-    def remaining(self) -> int:
-        self._rollover()
-        return -1 if self.max_calls <= 0 else max(0, self.max_calls - self._used)
-
-    @property
-    def used(self) -> int:
-        self._rollover()
-        return self._used
-
-    def reset(self) -> None:
-        self._used = 0
-        self._day = time.strftime("%Y-%m-%d")
-
-
-# 登录接口限流（第十五轮，R-AUTH-03）：防在线爆破的第二道闸
-# （第一道是 main.py 的连续失败锁定）。10 次/分钟/IP，成功失败都计数。
-login_limiter = RateLimiter(max_calls=10, window_seconds=60.0)
-
-
-# 全局 LLM 日配额；上限由环境变量 LLM_DAILY_BUDGET 决定（0 = 不限，本地默认）
-llm_budget = DailyBudget(max_calls=_daily_budget_from_env())
 
 
 def client_ip(request) -> str:

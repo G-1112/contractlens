@@ -28,6 +28,7 @@ class PdfParser:
             return self._fallback_pypdf(data), True
 
         with pdfplumber.open(io.BytesIO(data)) as pdf:
+            page_count = len(pdf.pages)
             for page_no, page in enumerate(pdf.pages, start=1):
                 width = page.width or 1
                 height = page.height or 1

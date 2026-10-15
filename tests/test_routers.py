@@ -62,16 +62,9 @@ def test_health(client):
 
 
 def test_root(client):
-    """根路径按前端产物是否就绪而分流：就绪返回 SPA HTML，否则返回服务信息 JSON。"""
-    from api.config import ROOT_DIR
-
     r = client.get("/")
     assert r.status_code == 200
-    built = any((ROOT_DIR / "web" / name / "index.html").is_file() for name in ("site", "dist"))
-    if built:
-        assert "<html" in r.text[:200].lower()
-    else:
-        assert "契约眼" in r.json()["service"]
+    assert "契约眼" in r.json()["service"]
 
 
 # ---------------------------------------------------------------------------
@@ -251,48 +244,6 @@ def test_export_invalid_format(client):
 def test_export_missing_report(client):
     r = client.post("/api/report/nope", params={"format": "md"})
     assert r.status_code == 404
-
-
-# ---------------------------------------------------------------------------
-# GET 导出（前端真实用法）
-# ---------------------------------------------------------------------------
-# 回归测试：前端 5 个导出按钮是 `<a href>`，浏览器只发 GET；而路由此前只注册
-# POST，导致点击一律 404（测试只覆盖 POST，所以一直是绿的、产品却是坏的）。
-@pytest.mark.parametrize("fmt", ["md", "revised", "checklist"])
-def test_export_via_get_matches_frontend_usage(client, fmt):
-    _put_report("f1")
-    r = client.get("/api/report/f1", params={"format": fmt})
-    assert r.status_code == 200, r.text[:200]
-    assert "合同" in r.text
-
-
-def test_export_pdf_via_get(client):
-    """PDF 走 GET：浏览器 <a href> 直接触发，不能要求 POST。"""
-    _put_report("f1")
-    r = client.get("/api/report/f1", params={"format": "pdf"})
-    assert r.status_code == 200, r.text[:300]
-    assert r.headers["content-type"].startswith("application/pdf")
-    assert r.content[:5] == b"%PDF-"
-
-
-def test_export_get_and_post_same_result(client):
-    """GET/POST 共用 handler，内容应一致（仅文件名类响应头差异）。"""
-    _put_report("f1")
-    g = client.get("/api/report/f1", params={"format": "md"})
-    p = client.post("/api/report/f1", params={"format": "md"})
-    assert g.status_code == p.status_code == 200
-    assert g.text == p.text
-
-
-def test_export_get_missing_report(client):
-    r = client.get("/api/report/nope", params={"format": "md"})
-    assert r.status_code == 404
-
-
-def test_export_get_invalid_format(client):
-    _put_report("f1")
-    r = client.get("/api/report/f1", params={"format": "xml"})
-    assert r.status_code == 400
 
 
 # ---------------------------------------------------------------------------

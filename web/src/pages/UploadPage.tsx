@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchSample, getDocument, getResult, uploadFile } from "../api";
+import { uploadFile } from "../api";
 import { useStore } from "../store/useStore";
-import { loadRecent, removeRecent, type RecentReport } from "../recent";
 import type { ContractType } from "../types";
 
 const CONTRACT_TYPES: { value: ContractType; label: string; desc: string }[] = [
@@ -10,14 +9,6 @@ const CONTRACT_TYPES: { value: ContractType; label: string; desc: string }[] = [
   { value: "intern", label: "实习协议", desc: "实习协议" },
   { value: "loan", label: "借款合同", desc: "民间借贷/消费贷" },
   { value: "guarantee", label: "保证担保", desc: "担保/保证合同" },
-];
-
-// 评审零门槛体验：预置样例（对应后端 /api/sample/{key} 白名单）
-const SAMPLES: { key: string; label: string; type: ContractType; note: string }[] = [
-  { key: "loan", label: "借款合同", type: "loan", note: "标准样例，看全流程" },
-  { key: "loan_injection", label: "借款合同·注入攻击", type: "loan", note: "安全演示，看防护拦截" },
-  { key: "rent", label: "房屋租赁", type: "rent", note: "逐条风险标注" },
-  { key: "labor", label: "劳动合同", type: "labor", note: "条款审查" },
 ];
 
 export default function UploadPage() {
@@ -31,35 +22,7 @@ export default function UploadPage() {
   // 此前前端只把它存进 store 就立刻进入分析，导致用户要等到分析阶段
   // 才收到 NO_TEXT_LAYER 报错。这里改为上传后立即拦下并给出可操作指引。
   const [noTextLayer, setNoTextLayer] = useState(false);
-  const [recents, setRecents] = useState<RecentReport[]>(() => loadRecent());
-  const [openingId, setOpeningId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // 第十五轮（R-UX-01）：刷新/误关标签页后可从「最近的分析」一键重开报告
-  const openRecent = useCallback(
-    async (r: RecentReport) => {
-      setOpeningId(r.fileId);
-      setErr(null);
-      try {
-        const [report, doc] = await Promise.all([
-          getResult(r.fileId),
-          getDocument(r.fileId),
-        ]);
-        const { setFile, setDocument, setReport } = useStore.getState();
-        setFile(r.fileId, r.contractType as ContractType, r.filename || r.fileId);
-        setDocument(doc);
-        setReport(report);
-        setStage("report");
-      } catch {
-        // 结果已过期（后端重启等）：从列表移除并提示
-        setRecents(removeRecent(r.fileId));
-        setErr("该报告已失效（服务已重启或结果过期），请重新上传分析");
-      } finally {
-        setOpeningId(null);
-      }
-    },
-    [setStage],
-  );
 
   const doUpload = useCallback(async () => {
     if (!file) return;
@@ -92,67 +55,8 @@ export default function UploadPage() {
     if (f) setFileState(f);
   }, []);
 
-  /** 一键体验：拉取预置样例 → 走与手动上传完全相同的链路 */
-  const trySample = useCallback(
-    async (key: string, type: ContractType) => {
-      setUploading(true);
-      setErr(null);
-      setNoTextLayer(false);
-      try {
-        const blob = await fetchSample(key);
-        const file = new File([blob], `${key}.docx`, {
-          type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        });
-        const res = await uploadFile(file, type);
-        setFile(res.file_id, res.contract_type, res.filename);
-        setUploadInfo({ page_count: res.page_count, has_text_layer: res.has_text_layer });
-        if (!res.has_text_layer) {
-          setNoTextLayer(true);
-          return;
-        }
-        setStage("analyzing");
-      } catch (e) {
-        setErr(e instanceof Error ? e.message : "示例加载失败");
-        setError(e instanceof Error ? e.message : "示例加载失败");
-      } finally {
-        setUploading(false);
-      }
-    },
-    [setFile, setUploadInfo, setStage, setError],
-  );
-
   return (
     <div className="mx-auto max-w-2xl">
-      {/* 最近的分析（R-UX-01）：刷新/误关后一键重开 */}
-      {recents.length > 0 && (
-        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4">
-          <div className="mb-3 text-sm font-semibold text-slate-700">最近的分析 · 点击重开报告</div>
-          <div className="space-y-2">
-            {recents.map((r) => (
-              <button
-                key={r.fileId}
-                onClick={() => openRecent(r)}
-                disabled={openingId !== null}
-                className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-sm transition hover:border-brand-300 hover:bg-brand-50/50 disabled:opacity-50"
-              >
-                <span className="truncate">
-                  {r.filename || r.fileId}
-                  <span className="ml-2 text-xs text-slate-400">
-                    {r.contractType} · {new Date(r.ts).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
-                  </span>
-                </span>
-                <span className="ml-3 shrink-0 text-xs font-medium text-brand-600">
-                  {openingId === r.fileId ? "打开中…" : "重开报告 →"}
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className="mt-2 text-[11px] text-slate-400">
-            记录仅保存在本机浏览器；服务重启后旧报告会自动失效并从列表移除。
-          </p>
-        </div>
-      )}
-
       <div className="mb-8 text-center">
         <h2 className="text-2xl font-bold">上传一份合同，逐条看清风险</h2>
         <p className="mt-2 text-slate-500">
@@ -179,30 +83,6 @@ export default function UploadPage() {
             <div className="text-xs text-slate-500">{t.desc}</div>
           </button>
         ))}
-      </div>
-
-      {/* 零门槛体验：预置示例 */}
-      <div className="mb-5 rounded-2xl border border-brand-100 bg-brand-50/50 p-4">
-        <div className="mb-3 text-sm font-semibold text-brand-900">
-          没有现成合同？点一个直接体验
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {SAMPLES.map((s) => (
-            <button
-              key={s.key}
-              disabled={uploading}
-              onClick={() => {
-                reset();
-                useStore.setState({ contractType: s.type });
-                void trySample(s.key, s.type);
-              }}
-              className="rounded-xl border border-brand-200 bg-white p-3 text-left transition hover:border-brand-500 hover:shadow-sm disabled:opacity-50"
-            >
-              <div className="text-sm font-semibold">{s.label}</div>
-              <div className="mt-0.5 text-xs text-slate-500">{s.note}</div>
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 文件拖拽区 */}
@@ -277,7 +157,7 @@ export default function UploadPage() {
       {/* 功能亮点 */}
       <div className="mt-8 grid grid-cols-3 gap-3 text-center text-sm">
         {[
-          ["规则引擎", "111 条规则库确定性判定"],
+          ["规则引擎", "80 条规则库确定性判定"],
           ["AI 语义判定", "大模型逐条解读大白话"],
           ["谈判话术", "一键生成可直接发送的话术"],
         ].map(([t, d]) => (
