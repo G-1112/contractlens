@@ -133,25 +133,3 @@ class ScriptRequest(BaseModel):
 
 class ScriptResult(BaseModel):
     scripts: list[str] = Field(default_factory=list)
-
-
-class ChatSource(BaseModel):
-    """追问回答的引用来源（可追溯到具体条款/法条，对应大赛「可验证」要求）。"""
-
-    kind: str  # clause / regulation / risk
-    ref: str = ""  # 条款序号 或 法规出处
-    text: str = ""
-
-
-class ChatRequest(BaseModel):
-    file_id: str
-    question: str
-
-
-class ChatResponse(BaseModel):
-    answer: str
-    sources: list[ChatSource] = Field(default_factory=list)
-    trace: list[str] = Field(default_factory=list)  # 工具调用轨迹（前端"思考可视化"）
-    mode: str = "mock"  # mock（确定性模板） / llm（模型生成）
-    injection_suspected: bool = False
-    disclaimer: str = "本回答基于合同原文与法规库检索结果生成，不构成法律意见，仅供参考。"
