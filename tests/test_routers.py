@@ -20,16 +20,8 @@ def client(tmp_path, monkeypatch):
     """隔离：上传目录指向临时目录，并清空全局 store 单例。"""
     settings = get_settings()
     monkeypatch.setattr(settings, "upload_dir", tmp_path)
-    # 限流器是进程级单例：同 session 内其他测试文件的上传/分析请求会耗尽
-    # 配额，导致本文件用例被误判 429 → 用例前后重置（第十三轮测试基建修复）。
-    from api.ratelimit import analyze_limiter, upload_limiter
-
-    upload_limiter.reset()
-    analyze_limiter.reset()
     _reset_store()
     yield TestClient(app)
-    upload_limiter.reset()
-    analyze_limiter.reset()
     _reset_store()
 
 
@@ -70,9 +62,16 @@ def test_health(client):
 
 
 def test_root(client):
+    """根路径按前端产物是否就绪而分流：就绪返回 SPA HTML，否则返回服务信息 JSON。"""
+    from api.config import ROOT_DIR
+
     r = client.get("/")
     assert r.status_code == 200
-    assert "契约眼" in r.json()["service"]
+    built = any((ROOT_DIR / "web" / name / "index.html").is_file() for name in ("site", "dist"))
+    if built:
+        assert "<html" in r.text[:200].lower()
+    else:
+        assert "契约眼" in r.json()["service"]
 
 
 # ---------------------------------------------------------------------------
