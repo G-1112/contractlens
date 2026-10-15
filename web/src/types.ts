@@ -83,3 +83,23 @@ export interface ErrorEvent {
   message?: string;
 }
 export type StreamEvent = ProgressEvent | RiskEvent | DoneEvent | ErrorEvent;
+
+// 追问对话（/api/chat）
+export interface ChatSource {
+  /** clause / regulation / risk */
+  kind: string;
+  /** 条款序号 或 法规出处 */
+  ref: string;
+  text: string;
+}
+
+export interface ChatResponse {
+  answer: string;
+  sources: ChatSource[];
+  /** 工具调用轨迹（思考可视化） */
+  trace: string[];
+  /** mock（确定性模板） / llm（模型生成），前端如实标注 */
+  mode: string;
+  injection_suspected: boolean;
+  disclaimer: string;
+}

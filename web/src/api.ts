@@ -1,5 +1,6 @@
 import type {
   AnalysisReport,
+  ChatResponse,
   ContractType,
   DocumentResponse,
   StreamEvent,
@@ -77,4 +78,15 @@ export type ReportFormat = "md" | "revised" | "checklist" | "pdf" | "docx";
 
 export function reportDownloadUrl(fileId: string, format: ReportFormat): string {
   return `${BASE}/report/${fileId}?format=${format}`;
+}
+
+/** 追问对话：基于已生成的审查报告回答问题，返回带 sources/trace 的结构化响应。 */
+export async function chat(fileId: string, question: string): Promise<ChatResponse> {
+  const res = await fetch(`${BASE}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ file_id: fileId, question }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }

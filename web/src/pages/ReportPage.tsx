@@ -5,6 +5,7 @@ import RadarChart from "../components/RadarChart";
 import ClauseViewer from "../components/ClauseViewer";
 import RiskCard from "../components/RiskCard";
 import TalkScript from "../components/TalkScript";
+import ChatPanel from "../components/ChatPanel";
 import CopyButton from "../components/CopyButton";
 import { reportDownloadUrl } from "../api";
 import { buildRewriteDigest } from "../utils/clipboard";
@@ -208,6 +209,9 @@ export default function ReportPage() {
         </h3>
         <TalkScript scripts={report.talk_scripts} />
       </div>
+
+      {/* 追问对话（FR-11：Agent 化，回答可追溯） */}
+      <ChatPanel fileId={fileId} />
     </div>
   );
 }
