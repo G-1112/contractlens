@@ -9,17 +9,19 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Callable
 from pathlib import Path
+from typing import AsyncIterator, Callable
 
 from .config import get_settings
 from .engine import FusionEngine, LlmEngine, RegulationRetriever, RuleEngine
+from .engine.llm_engine import detect_injection
 from .engine.scoring import score_report
 from .parser import DocxParser, PdfParser, split_clauses
 from .report.generator import generate_talk_scripts
 from .schemas import (
     AnalysisReport,
     Clause,
+    DocumentLine,
     LlmJudgement,
     ParsedDocument,
     RiskItem,
@@ -74,55 +76,27 @@ def parse_file(path: str | Path, filename: str, contract_type: str) -> ParsedDoc
     )
 
 
-def detect_contract_type(filename: str, sample_text: str = "") -> str:
-    """判定合同类型：文件名先验，文件名无类型词时按正文特征词打分。
+def detect_contract_type(filename: str) -> str:
+    """根据文件名/内容粗判合同类型（前端可选，后端兜底 rent）。
 
     第十二轮修复（潜伏 bug）：原实现把通用词「合同」当成 labor 关键词，
     「房屋租赁合同.docx」被误判为 labor。判断顺序改为 实习 → 劳动（去掉
     通用词「合同」，保留「劳务」）→ 租赁 → 兜底 rent。
-
-    第十三轮增强（自动分类）：文件名不含任何类型词时（如「合同.docx」），
-    用正文特征词加权打分判定。特征词表按「标题型 ×3 / 强特征 ×1」两级
-    加权，取自三份样本合同正文实测（2026-10-17）：
-      - rent 样本：房屋 12 / 租金 7 / 押金 5 / 物业 1 / 退租 1
-      - labor 样本：劳动合同 2 / 工资 4 / 试用期 4 / 离职 1
-      - intern 样本：实习协议 1 / 实习期 8
-    「甲方/乙方」三类合同均高频出现，**刻意不收**——通用词正是上一轮
-    误判的根因。文件名命中时永远以文件名为准（命名通常准确），
-    内容打分只在文件名无类型词时介入，行为完全向后兼容。
     """
     name = filename.lower()
     if any(k in name for k in ("实习", "intern")):
         return "intern"
     if any(k in name for k in ("劳动", "labor", "用工", "劳务")):
         return "labor"
+    # 金融类（大赛方向）：保证/担保优先于借款判定，
+    # 因为「担保合同」「保证合同」常同时含「借款」字样。
+    if any(k in name for k in ("担保", "保证", "guarantee")):
+        return "guarantee"
+    if any(k in name for k in ("借款", "借贷", "贷款", "loan", "借据", "欠条")):
+        return "loan"
     if any(k in name for k in ("租", "rent")):
         return "rent"
-
-    if not sample_text:
-        return "rent"
-    scores = _score_by_content(sample_text)
-    if not scores or scores[0][1] == 0 or (len(scores) > 1 and scores[0][1] == scores[1][1]):
-        return "rent"  # 无特征词或最高分并列 → 兜底
-    return scores[0][0]
-
-
-# 内容特征词表：标题型（合同种类自述，权重 3）/ 强特征（仅本类高频，权重 1）
-_CONTENT_FEATURES: dict[str, dict[str, int]] = {
-    "intern": {"实习协议": 3, "实习单位": 3, "实习生": 3, "顶岗": 3, "校企": 3,
-               "实习期": 1, "实习证明": 1, "指导老师": 1},
-    "labor": {"劳动合同": 3, "劳动协议": 3, "用人单位": 3, "用工协议": 3,
-              "劳动者": 1, "工资": 1, "社保": 1, "试用期": 1, "加班费": 1,
-              "离职": 1, "解除劳动合同": 1},
-    "rent": {"租赁合同": 3, "房屋租赁": 3, "出租方": 3, "承租方": 3,
-             "房屋": 1, "租金": 1, "押金": 1, "物业": 1, "退租": 1, "中介费": 1},
-}
-
-
-def _score_by_content(text: str) -> list[tuple[str, int]]:
-    """按特征词表对正文打分，返回 [(类型, 分数), ...] 降序。"""
-    scores = {t: sum(w for word, w in words.items() if word in text) for t, words in _CONTENT_FEATURES.items()}
-    return sorted(scores.items(), key=lambda kv: -kv[1])
+    return "rent"
 
 
 def _run_rule_engine(clauses: list[Clause], contract_type: str) -> list[RuleHit]:
@@ -154,6 +128,46 @@ def _build_missing_items(clauses: list[Clause], missing_hits: list[RuleHit]) -> 
     return items
 
 
+def _build_injection_items(clauses: list[Clause], existing: list[RiskItem]) -> list[RiskItem]:
+    """提示注入预检（R-INJ-01，大赛创新点）。
+
+    与风险判定解耦：无论该条款是否被判为风险，只要命中注入特征就合成一条
+    「注入警示」条目。原因（实测发现）：注入文本常藏在无风险条款里（如免责
+    声明末尾的白色小字），若只在 llm judgement 上打标，而该条款未被判风险
+    就不会生成 item，文档级 injection_flagged 会漏报 —— 演示时评委看不到
+    任何警示。这里做全量扫描兜底。
+    """
+    seen = {it.clause_id for it in existing}
+    items: list[RiskItem] = []
+    for c in clauses:
+        if c.id in seen:
+            continue
+        hits = detect_injection(c.text)
+        if not hits:
+            continue
+        frag = "、".join(hits[:3])
+        items.append(
+            RiskItem(
+                clause_id=c.id,
+                clause_text=c.text[:200],
+                page=c.page,
+                final_level="中",
+                source="rule_only",
+                risk_type="注入风险",
+                explain=(
+                    f"该条款包含疑似提示注入内容（{frag}），可能试图操纵 AI 判定结果。"
+                    "系统已对该内容做隔离处理，本条判定结果仅作参考，请人工复核。"
+                ),
+                suggest="删除合同中与正文无关的指令性文字后重新上传；如系对方提供，建议要求其说明该内容来源。",
+                rewrite="",
+                regulation_refs=[],
+                rule_ids=[],
+                injection_suspected=True,
+            )
+        )
+    return items
+
+
 async def run_analysis_streaming(
     parsed: ParsedDocument, contract_type: str, file_id: str, emit: Sink | None = None
 ) -> AnalysisReport:
@@ -162,24 +176,10 @@ async def run_analysis_streaming(
     clauses = parsed.clauses
     total = len(clauses)
 
-    # 条款总量上限（ANALYZE_MAX_CLAUSES，默认 200）：超限按文档顺序只分析前 N 条，
-    # 控制逐条 LLM 判定的总成本；截断事实经 SSE progress 提示与 report.truncated 透出。
-    truncated = total > settings.analyze_max_clauses
-    if truncated:
-        clauses = clauses[: settings.analyze_max_clauses]
-
     emit = emit or (lambda _e: None)
 
     # 1) 规则引擎（确定性，先跑，作为兜底）
-    emit(
-        {
-            "type": "progress",
-            "stage": "rule",
-            "current": 0,
-            "total": len(clauses),
-            **({"message": f"条款超限，已截断为前 {len(clauses)} 条"} if truncated else {}),
-        }
-    )
+    emit({"type": "progress", "stage": "rule", "current": 0, "total": total})
     rule_hits = _run_rule_engine(clauses, contract_type)
     rule_by_clause: dict[str, list[RuleHit]] = {}
     for h in rule_hits:
@@ -191,18 +191,17 @@ async def run_analysis_streaming(
     llm = LlmEngine(settings)
     fusion = FusionEngine()
 
-    # LLM 判定结果：失败/降级时为 None（fusion 据此走 rule_only），故元素可空
-    judgements: list[LlmJudgement | None] = []
+    judgements: list[LlmJudgement] = []
     reg_refs: dict[str, list[str]] = {}
 
     sem = asyncio.Semaphore(max(1, settings.llm_concurrency))
-    progress = _JudgeProgress(len(clauses), emit)
+    progress = _JudgeProgress(total, emit)
 
     async def _judge_one(clause: Clause) -> LlmJudgement | None:
         async with sem:
             # 第十二轮修复（实证 P1）：
-            # ① RAG 检索原本在 try 之外 —— 检索器异常（如法规库文件损坏）
-            #    会直接击穿 gather，整份合同分析失败；
+            # ① RAG 检索原本在 try 之外 —— 检索器异常（如 USE_VECTOR_DB=true 时
+            #    的递归崩溃）会直接击穿 gather，整份合同分析失败；
             # ② LLM 失败时原本返回 risk_level="无" 的空 judgement —— 但 fusion 的
             #    rule_only 分支要求 llm is None，空 judgement 让所有规则命中条目
             #    被打成 rule_override + 误导性文案「规则引擎判定为更高风险」
@@ -229,17 +228,16 @@ async def run_analysis_streaming(
     # 3) 融合 + 逐条推送风险事件
     items = fusion.fuse(clauses, [h for h in rule_hits if not h.clause_id.startswith("missing-")], judgements, reg_refs)
     items += _build_missing_items(clauses, missing_hits)
+    items += _build_injection_items(clauses, items)
 
     for it in items:
         if it.final_level != "无":
             emit({"type": "risk", "data": it.model_dump()})
 
     # 4) 评分 + 话术
-    emit({"type": "progress", "stage": "score", "current": len(clauses), "total": len(clauses)})
+    emit({"type": "progress", "stage": "score", "current": total, "total": total})
     scripts = await generate_talk_scripts(items, llm)
-    report = score_report(
-        file_id, contract_type, items, scripts, clause_count=len(clauses), truncated=truncated
-    )
+    report = score_report(file_id, contract_type, items, scripts, clause_count=total)
 
     emit({"type": "done", "report": report.model_dump()})
     return report
