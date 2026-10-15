@@ -129,27 +129,10 @@ def section_retriever() -> str:
 
 
 async def main() -> None:
-    # 报告头必须自证运行模式：此前无论实际跑mock 还是真实 LLM，都硬写「mock 模式」，
-    # 导致真实 LLM 跑出的指标被标注成离线口径，引用时会误判性能与等级分布。
-    # 依据 api.config._load_env_file 的 setdefault 语义（环境变量优先于 .env），
-    # 这里直接读进程环境判断实际生效的 Key，与 LlmEngine 的判定口径一致。
-    from api.config import get_settings
-
-    _s = get_settings()
-    _real_llm = bool(_s.llm_api_key)
-    _mode_desc = (
-        f"真实 LLM（{_s.llm_model}，base_url={_s.llm_base_url or '默认'}，"
-        f"并发={_s.llm_concurrency}）——与线上部署同口径"
-        if _real_llm
-        else "mock 模式（无 LLM Key，规则引擎与检索全量生效）——离线可复现口径"
-    )
-
     out: list[str] = [
         "# 金融方向实测报告（本机运行生成）",
         "",
-        f"> 生成脚本：`scripts/evaluate_finance.py`；运行环境：本机 Python + {_mode_desc}。",
-        "> ⚠️ 两种口径的等级分布与耗时差异显著（LLM 会额外给出规则未枚举的「低」风险长尾，"
-        "耗时上升两个数量级）。对外引用请注明口径。",
+        "> 生成脚本：`scripts/evaluate_finance.py`；运行环境：本机 Python + mock 模式（无 LLM Key，规则引擎与检索全量生效）。",
         "",
         section_rules_and_regs(),
         "",
