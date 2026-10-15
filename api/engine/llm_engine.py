@@ -183,6 +183,34 @@ class LlmEngine:
         raise LLMUnavailable(f"LLM 判定失败（重试 {self.settings.llm_max_retries} 次）: {last_err}")
 
     # ------------------------------------------------------------------
+    async def chat(self, system: str, user: str) -> str | None:
+        """通用对话补全（追问链路用）。
+
+        与 judge 的区别：不强制 JSON，输出自然语言；mock 模式（无 client）
+        返回 None，由调用方用确定性模板回答（保证离线可演示、可复现）。
+        """
+        if not self._client:
+            return None
+
+        last_err: Exception | None = None
+        for attempt in range(self.settings.llm_max_retries + 1):
+            try:
+                resp = await self._client.chat.completions.create(
+                    model=self.settings.llm_model,
+                    temperature=self.settings.llm_temperature,
+                    messages=[
+                        {"role": "system", "content": system},
+                        {"role": "user", "content": user},
+                    ],
+                )
+                return resp.choices[0].message.content or ""
+            except Exception as e:  # noqa: BLE001 网络/超时/限流 → 重试
+                last_err = e
+                if attempt < self.settings.llm_max_retries:
+                    await asyncio.sleep(min(0.5 * (attempt + 1), 3.0))
+        raise LLMUnavailable(f"LLM 对话失败（重试 {self.settings.llm_max_retries} 次）: {last_err}")
+
+    # ------------------------------------------------------------------
     def _parse(self, raw: str, clause: Clause, injection_suspected: bool = False) -> LlmJudgement:
         data: dict[str, Any] = json.loads(raw)
         return LlmJudgement(

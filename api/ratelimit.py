@@ -74,6 +74,8 @@ analyze_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
 script_limiter = RateLimiter(max_calls=15, window_seconds=60.0)
 # 报告导出：PDF/DOCX 走 WeasyPrint 重渲染，开销大，单 IP 每分钟 20 次（R-RL-01）
 report_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
+# 追问对话：多轮交互频率高且触发 LLM 调用，单 IP 每分钟 30 次
+chat_limiter = RateLimiter(max_calls=30, window_seconds=60.0)
 
 
 def client_ip(request) -> str:
