@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .routers import analyze, report, script, upload
+from .routers import analyze, chat, report, script, upload
 
 settings = get_settings()
 
@@ -60,6 +60,7 @@ app.include_router(upload.router)
 app.include_router(analyze.router)
 app.include_router(script.router)
 app.include_router(report.router)
+app.include_router(chat.router)
 
 
 @app.get("/api/health")
