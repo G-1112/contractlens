@@ -76,13 +76,6 @@ class Settings:
     upload_dir: Path = Path(os.getenv("UPLOAD_DIR", str(DATA_DIR / "uploads")))
     max_upload_bytes: int = int(os.getenv("MAX_UPLOAD_BYTES", str(20 * 1024 * 1024)))
 
-    # ---- 评审访问 ----
-    # 《作品提交说明》四要求提交智能体链接及账号密码供评审使用。本项目不做
-    # 账号系统（不采集个人信息），改为一道共享访问口令：
-    #   - 留空（默认）= 不启用门禁，本地开发与既有测试行为完全不变；
-    #   - 设置后，/api/* 业务端点需带 X-Review-Code 头或 ?code= 参数。
-    review_access_code: str = os.getenv("REVIEW_ACCESS_CODE", "").strip()
-
     # ---- 业务 ----
     max_pages: int = 30  # 单份合同页数上限
     rag_top_k: int = 3  # 每条款检索法规片段数
