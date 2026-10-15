@@ -11,14 +11,19 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
+from typing import Iterable
 
 from ..schemas import Clause, DocumentLine
 
 # 编号模式 → 层级。顺序即优先级，先匹配到的优先。
 _PATTERNS: list[tuple[re.Pattern[str], int]] = [
     (re.compile(r"^第[一二三四五六七八九十百零〇]+章"), 1),  # 章
-    (re.compile(r"^第[一二三四五六七八九十百零〇]+条"), 2),  # 条
+    (re.compile(r"^第[一二三四五六七八九十百零〇]+条"), 2),  # 条（中文数字：第五条）
+    # 阿拉伯数字编号（第十三轮修复）：原实现只认中文数字，"第1条""第2款"这类
+    # 编号不被识别为条款起始，整份合同会被并入同一个"前言"块 —— 合成评测集上
+    # 实测 8 条条款被切成 1 条，召回率假性崩塌。真实合同（尤其是金融机构模板）
+    # 大量使用阿拉伯数字编号，必须支持。
+    (re.compile(r"^第\d+\s*[条款项章节]"), 2),  # 第1条 / 第2款（阿拉伯数字）
     (re.compile(r"^[一二三四五六七八九十]+、"), 2),  # 一、
     (re.compile(r"^\d+\.\d+(\.\d+)*\s*\S?"), 3),  # 1.1 / 1.1.1
     (re.compile(r"^[（(][一二三四五六七八九十]+[）)]"), 4),  # （一）
