@@ -11,7 +11,9 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict, deque
+from collections import defaultdict
+from collections import deque
+from typing import Deque
 
 
 class RateLimiter:
@@ -24,7 +26,7 @@ class RateLimiter:
     def __init__(self, max_calls: int, window_seconds: float = 60.0) -> None:
         self.max_calls = max_calls
         self.window = window_seconds
-        self._hits: dict[str, deque[float]] = defaultdict(deque)
+        self._hits: dict[str, Deque[float]] = defaultdict(deque)
 
     def _sweep(self, now: float) -> None:
         """全量清扫：删除已空/全部滑出窗口的键；仍超限则淘汰最旧的键。"""
@@ -72,6 +74,8 @@ analyze_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
 script_limiter = RateLimiter(max_calls=15, window_seconds=60.0)
 # 报告导出：PDF/DOCX 走 WeasyPrint 重渲染，开销大，单 IP 每分钟 20 次（R-RL-01）
 report_limiter = RateLimiter(max_calls=20, window_seconds=60.0)
+# 追问对话：多轮交互频率高且触发 LLM 调用，单 IP 每分钟 30 次
+chat_limiter = RateLimiter(max_calls=30, window_seconds=60.0)
 
 
 def client_ip(request) -> str:
