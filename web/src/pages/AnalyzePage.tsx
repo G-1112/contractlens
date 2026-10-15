@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { analyze, getDocument, getResult } from "../api";
 import { useStore } from "../store/useStore";
 import type { RiskItem, StreamEvent } from "../types";
@@ -27,37 +27,11 @@ export default function AnalyzePage() {
     setDocument,
     setStage,
   } = useStore();
+  const started = useRef(false);
 
   useEffect(() => {
-    if (!fileId) return;
-
-    const applyResult = async () => {
-      const report = await getResult(fileId);
-      const doc = await getDocument(fileId);
-      setReport(report);
-      setDocument(doc);
-      setStage("report");
-    };
-
-    // React 18 StrictMode 开发态会 mount → effect → cleanup → effect 双跑：
-    // 第一次发起的 SSE 被 cleanup abort（后端后台任务仍会跑完并写入结果），
-    // 第二次发起撞上后端 try_begin_analysis 锁收到 409「正在分析中」。
-    // 因此 409 不视为错误，改为轮询等待在途分析完成（实测可复现的死锁场景）。
-    const waitInFlight = async (maxMs = 120000) => {
-      const t0 = Date.now();
-      for (;;) {
-        try {
-          await applyResult();
-          return;
-        } catch {
-          if (Date.now() - t0 > maxMs) {
-            setError("等待在途分析结果超时，请重新上传");
-            return;
-          }
-          await new Promise((r) => setTimeout(r, 2000));
-        }
-      }
-    };
+    if (started.current || !fileId) return;
+    started.current = true;
 
     const ctrl = new AbortController();
     (async () => {
@@ -68,17 +42,17 @@ export default function AnalyzePage() {
           else if (e.type === "error") setError(e.message ?? e.code);
           else if (e.type === "done") {
             // 拉取最终报告与文档
-            await applyResult();
+            const report = await getResult(fileId);
+            const doc = await getDocument(fileId);
+            setReport(report);
+            setDocument(doc);
+            setStage("report");
           }
         }, ctrl.signal);
       } catch (err) {
-        if (err instanceof DOMException && err.name === "AbortError") return;
-        const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes("正在分析中")) {
-          await waitInFlight();
-          return;
+        if (!(err instanceof DOMException && err.name === "AbortError")) {
+          setError(err instanceof Error ? err.message : "分析失败");
         }
-        setError(msg || "分析失败");
       }
     })();
 

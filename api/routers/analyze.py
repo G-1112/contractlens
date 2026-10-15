@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ..pipeline import parse_file, run_analysis_streaming
-from ..ratelimit import analyze_limiter, client_ip, llm_budget
+from ..ratelimit import analyze_limiter, client_ip
 from ..store import store
 
 logger = logging.getLogger(__name__)
@@ -30,10 +30,6 @@ router = APIRouter(prefix="/api", tags=["analyze"])
 class AnalyzeRequest(BaseModel):
     file_id: str
     contract_type: str = "rent"
-    # 默认不在分析阶段内联生成谈判话术：真实 LLM 下话术是第二个 LLM 波次
-    # （实测 5 条话术平均 1230ms），内联会让 `done` 事件晚约 1.2s到达。
-    # 前端拿到报告后调 POST /api/script 按需生成。需要旧行为时置 true。
-    inline_scripts: bool = False
 
 
 @router.get("/document/{file_id}")
@@ -62,14 +58,6 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
         raise HTTPException(
             status_code=429,
             detail=f"分析请求过于频繁，请 {analyze_limiter.retry_after(ip)} 秒后再试",
-        )
-
-    # LLM 日配额闸门（成本兜底）：与每分钟 IP 限流叠加，日调用量封顶
-    _ok, _remaining = llm_budget.allow()
-    if not _ok:
-        raise HTTPException(
-            status_code=429,
-            detail="今日演示调用额度已用尽，请稍后再试",
         )
     entry = store.get_upload(req.file_id)
     if entry is None:
@@ -107,11 +95,7 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
             async def _run() -> None:
                 try:
                     report = await run_analysis_streaming(
-                        parsed,
-                        req.contract_type,
-                        req.file_id,
-                        _collect,
-                        generate_scripts=req.inline_scripts,
+                        parsed, req.contract_type, req.file_id, _collect
                     )
                     store.put_report(req.file_id, report)
                 except Exception as e:  # noqa: BLE001

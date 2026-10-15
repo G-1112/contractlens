@@ -119,29 +119,9 @@ class RegulationRetriever:
     # ------------------------------------------------------------------
     @staticmethod
     def _retrieve_tfidf(clause: Clause, snippets: list["_Snippet"], top_k: int) -> list[str]:
-        """纯 Python bigram TF-IDF 检索（默认路径，零依赖）。
-
-        性能优化（大赛实测项，331 条款基准）：
-        ① 复用 _Snippet 预计算的 norm —— 原实现走 _cosine，每个片段每次都要
-           重算 sqrt(sum(v²))，长合同下是纯浪费（片段向量恒定不变）；
-        ② 大集合预筛 —— 与查询无任何共同 bigram 的片段相似度必为 0，直接跳过，
-           避免无谓的点积（这些片段本来也会被 0.01 阈值过滤掉）。
-        两项均为纯加速，不改变检索结果与排序语义。
-        """
+        """纯 Python bigram TF-IDF 检索（默认路径，零依赖）。"""
         qvec = _bigrams(clause.text)
-        if not qvec or not snippets:
-            return []
-        qnorm = math.sqrt(sum(v * v for v in qvec.values())) or 1.0
-        qkeys = qvec.keys()
-
-        scored: list[tuple[float, "_Snippet"]] = []
-        for s in snippets:
-            if not (qkeys & s.vector.keys()):
-                continue  # 无共同 bigram → 相似度 0，跳过
-            small, big = (qvec, s.vector) if len(qvec) <= len(s.vector) else (s.vector, qvec)
-            dot = sum(v * big.get(k, 0) for k, v in small.items())
-            scored.append((dot / (qnorm * s.norm), s))
-
+        scored = [(_cosine(qvec, s.vector), s) for s in snippets]
         scored.sort(key=lambda x: -x[0])
         top = [s for score, s in scored[:top_k] if score > 0.01]
         return [f"[{s.title} · {s.section}] {s.text}" for s in top]
@@ -168,9 +148,4 @@ def _infer_contract_type(clause: Clause) -> str:
         return "labor"
     if any(k in text for k in ("实习", "实习生", "培养")):
         return "intern"
-    # 金融类兜底（大赛方向）：保证/担保先于借款判定
-    if any(k in text for k in ("保证人", "连带责任保证", "保证期间", "担保", "保证合同")):
-        return "guarantee"
-    if any(k in text for k in ("借款", "贷款", "出借人", "年利率", "还款", "本金")):
-        return "loan"
     return "rent"

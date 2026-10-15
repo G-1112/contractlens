@@ -17,10 +17,6 @@ dependencies = [
     "openai>=1.40",
     "jinja2>=3.1",
     "weasyprint>=62.0",
-    # PDF 保底渲染路径：weasyprint 需要系统图形库（Linux pango/cairo、
-    # Windows GTK 运行时），装不上时降级到 reportlab + 内置 CID 中文字体，
-    # 纯 Python wheel、零系统依赖。故 reportlab 属主依赖而非测试专用。
-    "reportlab>=4.0",
     "httpx>=0.27",
 ]
 
@@ -44,7 +40,7 @@ dev = [
     # 测试专用：tests/test_parsers.py 等用它生成带中文文本层的 PDF 夹具。
     # 第十二轮修复：此前未声明 → 全新环境 `pip install -e ".[dev]"` 后
     # 5 个 PDF 相关测试 ModuleNotFoundError（「10 分钟复现」断链）。
-    # 注：reportlab 同时是 PDF 导出的生产保底路径，已列入主依赖。
+    "reportlab>=4.0",
 ]
 
 [build-system]

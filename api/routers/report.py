@@ -1,11 +1,7 @@
 """结果与报告导出（FR-12）。
 
 - GET  /api/result/{file_id}  获取完整分析结果（含雷达图数据）
-- GET|POST /api/report/{file_id}?format=md|revised|checklist|pdf|docx  导出报告文件
-
-为什么 GET/POST 都支持：前端 5 个导出按钮用的是 `<a href>`，浏览器只会发 GET；
-此前只注册 POST，导致所有导出按钮点击后一律 404（测试只覆盖 POST 故未暴露）。
-两种方法共用同一 handler，行为一致。
+- POST /api/report/{file_id}?format=md|pdf|docx  导出报告文件
 """
 
 from __future__ import annotations
@@ -45,7 +41,6 @@ async def get_result(file_id: str) -> AnalysisReport:
     return report
 
 
-@router.get("/report/{file_id}")
 @router.post("/report/{file_id}")
 async def export_report(file_id: str, request: Request, format: str = "md"):
     # 限流（R-RL-01）：PDF/DOCX 走 WeasyPrint 重渲染，需防高频调用耗尽 CPU
