@@ -62,9 +62,16 @@ def test_health(client):
 
 
 def test_root(client):
+    """根路径按前端产物是否就绪而分流：就绪返回 SPA HTML，否则返回服务信息 JSON。"""
+    from api.config import ROOT_DIR
+
     r = client.get("/")
     assert r.status_code == 200
-    assert "契约眼" in r.json()["service"]
+    built = any((ROOT_DIR / "web" / name / "index.html").is_file() for name in ("site", "dist"))
+    if built:
+        assert "<html" in r.text[:200].lower()
+    else:
+        assert "契约眼" in r.json()["service"]
 
 
 # ---------------------------------------------------------------------------
