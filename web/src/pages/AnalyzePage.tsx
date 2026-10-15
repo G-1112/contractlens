@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { analyze, getDocument, getResult } from "../api";
 import { useStore } from "../store/useStore";
-import type { ContractType, RiskItem, StreamEvent } from "../types";
+import type { RiskItem, StreamEvent } from "../types";
 import RiskCard from "../components/RiskCard";
 
 const STAGE_LABEL: Record<string, string> = {
@@ -9,18 +9,6 @@ const STAGE_LABEL: Record<string, string> = {
   rule: "正在运行规则引擎…",
   judge: "正在 AI 逐条判定…",
   score: "正在生成评分与报告…",
-};
-
-/**
- * 模块级在途请求表（不用组件内 ref，原因见下方 useEffect 注释）。
- * key = fileId，value = 该次分析的 Promise。
- */
-const inFlight = new Map<string, Promise<void>>();
-
-const CONTRACT_LABEL: Record<ContractType, string> = {
-  rent: "房屋租赁合同",
-  labor: "劳动合同",
-  intern: "实习协议",
 };
 
 export default function AnalyzePage() {
@@ -38,50 +26,64 @@ export default function AnalyzePage() {
     setReport,
     setDocument,
     setStage,
-    setContractType,
   } = useStore();
-  // 第十三轮自动分类：记住「本次为 auto 且已识别」，用于向用户明示定型结果
-  const [detected, setDetected] = useState<ContractType | null>(null);
 
   useEffect(() => {
-    // 去重放在模块级：React 18 StrictMode 在开发态会把 effect 跑两遍
-    // （挂载 → 清理 → 再挂载）。若用组件内 ref 做一次性守卫，第二遍会因守卫为真
-    // 直接返回，而第一遍已被 cleanup 里的 abort 取消 —— 页面就永远停在初始进度（8%）。
-    // 现在：同一个 fileId 只发一次请求，重挂载时复用同一个 Promise；
-    // 流式回调写入的是全局 zustand store，与组件是否重挂载无关。
-    if (!fileId || inFlight.has(fileId)) return;
+    if (!fileId) return;
 
-    const task = (async () => {
+    const applyResult = async () => {
+      const report = await getResult(fileId);
+      const doc = await getDocument(fileId);
+      setReport(report);
+      setDocument(doc);
+      setStage("report");
+    };
+
+    // React 18 StrictMode 开发态会 mount → effect → cleanup → effect 双跑：
+    // 第一次发起的 SSE 被 cleanup abort（后端后台任务仍会跑完并写入结果），
+    // 第二次发起撞上后端 try_begin_analysis 锁收到 409「正在分析中」。
+    // 因此 409 不视为错误，改为轮询等待在途分析完成（实测可复现的死锁场景）。
+    const waitInFlight = async (maxMs = 120000) => {
+      const t0 = Date.now();
+      for (;;) {
+        try {
+          await applyResult();
+          return;
+        } catch {
+          if (Date.now() - t0 > maxMs) {
+            setError("等待在途分析结果超时，请重新上传");
+            return;
+          }
+          await new Promise((r) => setTimeout(r, 2000));
+        }
+      }
+    };
+
+    const ctrl = new AbortController();
+    (async () => {
       try {
         await analyze(fileId, contractType, async (e: StreamEvent) => {
           if (e.type === "progress") setProgress({ ...e });
-          else if (e.type === "contract_type_detected") {
-            setContractType(e.data);
-            setDetected(e.data);
-          } else if (e.type === "risk") appendRisk(e.data);
+          else if (e.type === "risk") appendRisk(e.data);
           else if (e.type === "error") setError(e.message ?? e.code);
           else if (e.type === "done") {
             // 拉取最终报告与文档
-            const report = await getResult(fileId);
-            const doc = await getDocument(fileId);
-            // 用户可能已中途「重新上传」：文件变了就别把页面拽回报告页
-            if (useStore.getState().fileId !== fileId) return;
-            setReport(report);
-            setDocument(doc);
-            setStage("report");
+            await applyResult();
           }
-        });
+        }, ctrl.signal);
       } catch (err) {
-        if (!(err instanceof DOMException && err.name === "AbortError")) {
-          setError(err instanceof Error ? err.message : "分析失败");
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg.includes("正在分析中")) {
+          await waitInFlight();
+          return;
         }
-      } finally {
-        inFlight.delete(fileId);
+        setError(msg || "分析失败");
       }
     })();
 
-    inFlight.set(fileId, task);
-  }, [fileId, contractType, appendRisk, setProgress, setError, setReport, setDocument, setStage, setContractType]);
+    return () => ctrl.abort();
+  }, [fileId, contractType, appendRisk, setProgress, setError, setReport, setDocument, setStage]);
 
   const total = progress?.total ?? 0;
   const current = progress?.current ?? 0;
@@ -94,18 +96,13 @@ export default function AnalyzePage() {
         <p className="mt-1 text-sm text-slate-500">
           {uploadInfo ? `${uploadInfo.page_count} 页 · 规则 + AI 双引擎判定` : ""}
         </p>
-        {detected && (
-          <p className="mt-1 inline-block rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
-            已自动识别为：{CONTRACT_LABEL[detected]}
-          </p>
-        )}
       </div>
 
       {/* 进度条 */}
       <div className="mb-6 rounded-xl bg-white p-5 shadow-sm">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="text-slate-600">
-            {progress?.message ?? STAGE_LABEL[progress?.stage ?? "parse"] ?? "处理中…"}
+            {STAGE_LABEL[progress?.stage ?? "parse"] ?? "处理中…"}
           </span>
           <span className="font-medium text-brand-600">
             {progress?.stage === "judge" ? `${current}/${total} 条` : `${pct}%`}
