@@ -5,10 +5,14 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
+from pathlib import Path
 
-from .config import get_settings
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
+
+from .config import get_settings, ROOT_DIR
 from .routers import analyze, chat, report, script, upload
 
 settings = get_settings()
@@ -72,6 +76,43 @@ async def health() -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# 生产模式：前端构建产物由后端同端口托管
+# ---------------------------------------------------------------------------
+# 为什么需要：公网部署只暴露一个 HTTP 端口，无法同时跑 Vite dev(5173) 与
+# uvicorn(8000)。前端产物由 `npm run build` 产出，此处直接托管，
+# 使单端口即可同时提供页面与 API。
+#
+# 目录优先级：web/site > web/dist
+#   - web/site：随仓库提交的产物副本。公网部署会排除 build output（dist/），
+#     但没有排除 site/，因此克隆即可部署、不要求目标机有 Node 环境。
+#   - web/dist：本地 build 的原始输出，优先于 site 仅用于本地开发即时预览。
+# dev 模式下两者都不存在时跳过挂载，行为与之前完全一致。
+_DIST_CANDIDATES = [ROOT_DIR / "web" / "site", ROOT_DIR / "web" / "dist"]
+_DIST_DIR = next((p for p in _DIST_CANDIDATES if (p / "index.html").is_file()), _DIST_CANDIDATES[0])
+_INDEX_HTML = _DIST_DIR / "index.html"
+_DIST_READY = _INDEX_HTML.is_file()
+
+
 @app.get("/")
-async def root() -> dict:
+async def root() -> Response:
+    """根路径：已构建前端则返回 SPA 入口，否则返回服务信息 JSON。"""
+    if _DIST_READY:
+        return FileResponse(_INDEX_HTML)
     return {"service": "契约眼 ContractLens", "docs": "/docs", "health": "/api/health"}
+
+
+if _DIST_READY:
+    _ASSETS_DIR = _DIST_DIR / "assets"
+    if _ASSETS_DIR.is_dir():
+        app.mount("/assets", StaticFiles(directory=_ASSETS_DIR), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str) -> Response:
+        """SPA 兜底：非 API 路径一律返回 index.html，交给前端路由。
+
+        /api/* 未匹配的路径仍返回 JSON 404，不吞掉真实接口错误。
+        """
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not Found")
+        return FileResponse(_INDEX_HTML)
