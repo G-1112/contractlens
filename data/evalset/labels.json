@@ -1,0 +1,3800 @@
+{
+  "rent_01.docx": {
+    "contract_type": "rent",
+    "clause_count": 6,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生甲方可随时进入，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "R10"
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张逾期交租每日违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "R12"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：押金抵扣一切损失，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R24"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生押金概不退还，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R02"
+      }
+    ]
+  },
+  "rent_02.docx": {
+    "contract_type": "rent",
+    "clause_count": 6,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生押金扣除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用单方涨租，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R03"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张甲方不承担任何责任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "rent_03.docx": {
+    "contract_type": "rent",
+    "clause_count": 6,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：逾期交租每日违约金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "R12"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：甲方不承担任何责任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：甲方可随时进入，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "R10"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "rent_04.docx": {
+    "contract_type": "rent",
+    "clause_count": 9,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生租金涨幅不受限制，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R19"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生押金抵扣一切损失，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R24"
+      },
+      {
+        "index": 2,
+        "text": "第3条 甲方主张押金扣除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：单方涨租，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R03"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：甲方可随时进入，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "R10"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用逾期交租每日违约金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "R12"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同项下适用延迟退租押金全扣，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R17"
+      }
+    ]
+  },
+  "rent_05.docx": {
+    "contract_type": "rent",
+    "clause_count": 10,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生逾期交租每日违约金，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "R12"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生甲方有权单方解除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "R13"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：维修费用由乙方承担，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "维修责任",
+        "rule_id": "R20"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：延迟退租押金全扣，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R17"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张甲方不承担任何责任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 如发生押金扣除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "rent_06.docx": {
+    "contract_type": "rent",
+    "clause_count": 10,
+    "risk_clauses": 8,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下适用甲方可随时进入，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "R10"
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：维修费用由乙方承担，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "维修责任",
+        "rule_id": "R20"
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生甲方不承担任何责任，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同项下适用租金涨幅不受限制，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R19"
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张押金概不退还，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R02"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用延迟退租押金全扣，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R17"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用逾期交租每日违约金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "R12"
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 如发生甲方有权单方解除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "R13"
+      }
+    ]
+  },
+  "rent_07.docx": {
+    "contract_type": "rent",
+    "clause_count": 9,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下适用延迟退租押金全扣，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R17"
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张押金扣除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：甲方可随时进入，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "R10"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：甲方不承担任何责任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张单方涨租，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R03"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用押金概不退还，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R02"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "rent_08.docx": {
+    "contract_type": "rent",
+    "clause_count": 11,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张甲方有权单方解除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "R13"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：维修费用由乙方承担，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "维修责任",
+        "rule_id": "R20"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：延迟退租押金全扣，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R17"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：押金概不退还，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R02"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：押金扣除，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方约定：甲方不承担任何责任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 8,
+        "text": "第9条 如发生甲方可随时进入，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "R10"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 10,
+        "text": "第11条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "rent_09.docx": {
+    "contract_type": "rent",
+    "clause_count": 10,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下适用单方涨租，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R03"
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：延迟退租押金全扣，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R17"
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张维修费用由乙方承担，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "维修责任",
+        "rule_id": "R20"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：押金抵扣一切损失，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R24"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生押金扣除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用甲方不承担任何责任，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "R27"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 双方约定：押金概不退还，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "R02"
+      }
+    ]
+  },
+  "rent_10.docx": {
+    "contract_type": "rent",
+    "clause_count": 10,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：甲方有权单方解除，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "R13"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生维修费用由乙方承担，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "维修责任",
+        "rule_id": "R20"
+      },
+      {
+        "index": 2,
+        "text": "第3条 甲方主张押金扣除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R09"
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张租金涨幅不受限制，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R19"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 7,
+        "text": "第8条 甲方主张押金抵扣一切损失，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "押金",
+        "rule_id": "R24"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同项下适用单方涨租，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "涨租",
+        "rule_id": "R03"
+      },
+      {
+        "index": 9,
+        "text": "第10条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "labor_01.docx": {
+    "contract_type": "labor",
+    "clause_count": 8,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 甲方主张试用期工资低于，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L02"
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张保密义务，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生违约金，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "L07"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：自愿放弃社保，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L16"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "labor_02.docx": {
+    "contract_type": "labor",
+    "clause_count": 9,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：单方调岗，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L08"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用自愿放弃社保，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L16"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：收取押金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L20"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张试用期不缴纳社保，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L15"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：违约金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "L07"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 如发生竞业限制，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "竞业限制",
+        "rule_id": "L06"
+      }
+    ]
+  },
+  "labor_03.docx": {
+    "contract_type": "labor",
+    "clause_count": 7,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生保密义务，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 甲方主张试用期工资低于，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L02"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：试用期可随时解除，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L21"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "labor_04.docx": {
+    "contract_type": "labor",
+    "clause_count": 10,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生收取押金，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L20"
+      },
+      {
+        "index": 2,
+        "text": "第3条 甲方主张保密义务，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用试用期不缴纳社保，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L15"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生竞业限制，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "竞业限制",
+        "rule_id": "L06"
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张试用期可随时解除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L21"
+      },
+      {
+        "index": 7,
+        "text": "第8条 甲方主张违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "L07"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同项下适用单方调岗，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L08"
+      }
+    ]
+  },
+  "labor_05.docx": {
+    "contract_type": "labor",
+    "clause_count": 9,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：竞业限制，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "竞业限制",
+        "rule_id": "L06"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生违约金，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "L07"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张试用期可随时解除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L21"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：试用期工资低于，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L02"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用试用期不缴纳社保，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L15"
+      },
+      {
+        "index": 8,
+        "text": "第9条 如发生保密义务，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      }
+    ]
+  },
+  "labor_06.docx": {
+    "contract_type": "labor",
+    "clause_count": 6,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同项下适用收取押金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L20"
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生试用期工资低于，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L02"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：试用期不缴纳社保，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L15"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "labor_07.docx": {
+    "contract_type": "labor",
+    "clause_count": 8,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张自愿放弃社保，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L16"
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生收取押金，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L20"
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张试用期可随时解除，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L21"
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张试用期不缴纳社保，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L15"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "labor_08.docx": {
+    "contract_type": "labor",
+    "clause_count": 10,
+    "risk_clauses": 8,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：试用期可随时解除，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L21"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：竞业限制，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "竞业限制",
+        "rule_id": "L06"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：试用期不缴纳社保，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L15"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生试用期工资低于，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L02"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用保密义务，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用自愿放弃社保，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L16"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同项下适用违约金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "L07"
+      },
+      {
+        "index": 9,
+        "text": "第10条 甲方主张收取押金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L20"
+      }
+    ]
+  },
+  "labor_09.docx": {
+    "contract_type": "labor",
+    "clause_count": 7,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生单方调岗，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L08"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下适用保密义务，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：收取押金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "L20"
+      }
+    ]
+  },
+  "labor_10.docx": {
+    "contract_type": "labor",
+    "clause_count": 6,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "L07"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 如发生试用期工资低于，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L02"
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张保密义务，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "L14"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生试用期可随时解除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "试用期",
+        "rule_id": "L21"
+      }
+    ]
+  },
+  "intern_01.docx": {
+    "contract_type": "intern",
+    "clause_count": 5,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生必须留任，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I08"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用低于最低工资，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同项下适用放弃工伤，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "intern_02.docx": {
+    "contract_type": "intern",
+    "clause_count": 9,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：放弃工伤，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "I11"
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生与专业无关，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "低",
+        "risk_type": "其他",
+        "rule_id": "I23"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生知识产权归单位，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张收取押金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：低于最低工资，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方约定：单方解除，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I10"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "intern_03.docx": {
+    "contract_type": "intern",
+    "clause_count": 10,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：无报酬，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I02"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生转正条件，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用违约金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "I11"
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张知识产权归单位，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生放弃工伤，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用低于最低工资，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 双方约定：必须留任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I08"
+      }
+    ]
+  },
+  "intern_04.docx": {
+    "contract_type": "intern",
+    "clause_count": 9,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 甲方主张与专业无关，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "低",
+        "risk_type": "其他",
+        "rule_id": "I23"
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张必须留任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I08"
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生知识产权归单位，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生无报酬，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I02"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下适用收取押金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方约定：转正条件，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 8,
+        "text": "第9条 甲方主张低于最低工资，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      }
+    ]
+  },
+  "intern_05.docx": {
+    "contract_type": "intern",
+    "clause_count": 9,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 甲方主张知识产权归单位，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生低于最低工资，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用与专业无关，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "低",
+        "risk_type": "其他",
+        "rule_id": "I23"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生转正条件，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张收取押金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 7,
+        "text": "第8条 如发生放弃工伤，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "intern_06.docx": {
+    "contract_type": "intern",
+    "clause_count": 10,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张必须留任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I08"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：单方解除，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I10"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用与专业无关，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "低",
+        "risk_type": "其他",
+        "rule_id": "I23"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用转正条件，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 甲方主张收取押金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同项下适用放弃工伤，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      }
+    ]
+  },
+  "intern_07.docx": {
+    "contract_type": "intern",
+    "clause_count": 8,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：转正条件，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张低于最低工资，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用收取押金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：知识产权归单位，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生必须留任，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I08"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方约定：放弃工伤，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      }
+    ]
+  },
+  "intern_08.docx": {
+    "contract_type": "intern",
+    "clause_count": 12,
+    "risk_clauses": 8,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同项下适用无报酬，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I02"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：转正条件，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用知识产权归单位，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张必须留任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I08"
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张低于最低工资，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 双方约定：收取押金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 10,
+        "text": "第11条 双方约定：违约金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "I11"
+      },
+      {
+        "index": 11,
+        "text": "第12条 如发生放弃工伤，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I21"
+      }
+    ]
+  },
+  "intern_09.docx": {
+    "contract_type": "intern",
+    "clause_count": 9,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：转正条件，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用违约金，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "I11"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下适用无报酬，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I02"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：收取押金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用与专业无关，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "低",
+        "risk_type": "其他",
+        "rule_id": "I23"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同项下适用低于最低工资，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      }
+    ]
+  },
+  "intern_10.docx": {
+    "contract_type": "intern",
+    "clause_count": 10,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下适用知识产权归单位，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I05"
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：收取押金，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "押金",
+        "rule_id": "I17"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用无报酬，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I02"
+      },
+      {
+        "index": 3,
+        "text": "第4条 如发生转正条件，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I18"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生单方解除，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "I10"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同项下适用低于最低工资，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "I13"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同项下适用与专业无关，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "低",
+        "risk_type": "其他",
+        "rule_id": "I23"
+      }
+    ]
+  },
+  "loan_01.docx": {
+    "contract_type": "loan",
+    "clause_count": 8,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生甲方不承担，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO11"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张砍头息，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO03"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生征信，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "LO12"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方约定：由甲方所在地法院管辖，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO14"
+      }
+    ]
+  },
+  "loan_02.docx": {
+    "contract_type": "loan",
+    "clause_count": 7,
+    "risk_clauses": 5,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 甲方主张手续费，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO05"
+      },
+      {
+        "index": 1,
+        "text": "第2条 如发生征信，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "LO12"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：宣布全部借款提前到期，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "LO08"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张利率由甲方调整，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO06"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：甲方不承担，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO11"
+      }
+    ]
+  },
+  "loan_03.docx": {
+    "contract_type": "loan",
+    "clause_count": 6,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：宣布全部借款提前到期，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "LO08"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张利率由甲方调整，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO06"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用砍头息，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO03"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生逾期违约金每日，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "LO07"
+      }
+    ]
+  },
+  "loan_04.docx": {
+    "contract_type": "loan",
+    "clause_count": 10,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张逾期违约金每日，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "LO07"
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方约定：砍头息，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO03"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：放弃抗辩权，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "LO10"
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张甲方不承担，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO11"
+      },
+      {
+        "index": 7,
+        "text": "第8条 如发生由甲方所在地法院管辖，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO14"
+      },
+      {
+        "index": 8,
+        "text": "第9条 如发生利滚利，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO04"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "loan_05.docx": {
+    "contract_type": "loan",
+    "clause_count": 7,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：由甲方所在地法院管辖，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO14"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用征信，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "LO12"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：放弃抗辩权，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "LO10"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生利滚利，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO04"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "loan_06.docx": {
+    "contract_type": "loan",
+    "clause_count": 9,
+    "risk_clauses": 5,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生甲方不承担，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO11"
+      },
+      {
+        "index": 5,
+        "text": "第6条 如发生放弃抗辩权，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "LO10"
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生征信，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "LO12"
+      },
+      {
+        "index": 7,
+        "text": "第8条 甲方主张手续费，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO05"
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方约定：利率由甲方调整，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO06"
+      }
+    ]
+  },
+  "loan_07.docx": {
+    "contract_type": "loan",
+    "clause_count": 10,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：利滚利，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO04"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同项下适用共享给第三方，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "隐私",
+        "rule_id": "LO13"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：甲方不承担，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO11"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张提前还款违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "LO09"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张利率由甲方调整，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO06"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 甲方主张砍头息，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO03"
+      },
+      {
+        "index": 9,
+        "text": "第10条 双方约定：宣布全部借款提前到期，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "LO08"
+      }
+    ]
+  },
+  "loan_08.docx": {
+    "contract_type": "loan",
+    "clause_count": 7,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张利率由甲方调整，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO06"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 甲方主张提前还款违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "LO09"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张征信，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "LO12"
+      }
+    ]
+  },
+  "loan_09.docx": {
+    "contract_type": "loan",
+    "clause_count": 11,
+    "risk_clauses": 8,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：利率由甲方调整，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO06"
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生砍头息，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO03"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同项下适用逾期违约金每日，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "LO07"
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张提前还款违约金，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "LO09"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生甲方不承担，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "LO11"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 甲方主张共享给第三方，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "隐私",
+        "rule_id": "LO13"
+      },
+      {
+        "index": 9,
+        "text": "第10条 甲方主张放弃抗辩权，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "LO10"
+      },
+      {
+        "index": 10,
+        "text": "第11条 本合同项下适用宣布全部借款提前到期，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "解约",
+        "rule_id": "LO08"
+      }
+    ]
+  },
+  "loan_10.docx": {
+    "contract_type": "loan",
+    "clause_count": 8,
+    "risk_clauses": 5,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生利滚利，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "利率",
+        "rule_id": "LO04"
+      },
+      {
+        "index": 3,
+        "text": "第4条 如发生提前还款违约金，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "违约金",
+        "rule_id": "LO09"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用手续费，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "利率",
+        "rule_id": "LO05"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生逾期违约金每日，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "违约金",
+        "rule_id": "LO07"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用征信，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "隐私",
+        "rule_id": "LO12"
+      }
+    ]
+  },
+  "guarantee_01.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 7,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同一式两份，甲乙双方各执一份，具有同等效力。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：主合同变更无需保证人同意，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "主合同变更",
+        "rule_id": "GU10"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：不可撤销，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生债权人转让债权无需通知，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      }
+    ]
+  },
+  "guarantee_02.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 11,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生放弃先诉抗辩权，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU03"
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张保证期间为主债务履行期限届满之日起两年，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用不可撤销，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：授权债权人直接扣划，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "GU15"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下适用包括但不限于本金、利息，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU04"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方约定：主合同变更无需保证人同意，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "主合同变更",
+        "rule_id": "GU10"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 10,
+        "text": "第11条 双方约定：保证期间约定不明，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "保证期间",
+        "rule_id": "GU09"
+      }
+    ]
+  },
+  "guarantee_03.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 10,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方约定：保证期间为主债务履行期限届满之日起两年，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生包括但不限于本金、利息，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU04"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生主合同变更无需保证人同意，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "主合同变更",
+        "rule_id": "GU10"
+      },
+      {
+        "index": 5,
+        "text": "第6条 甲方主张连带责任保证，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU01"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用无限连带责任，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU05"
+      },
+      {
+        "index": 7,
+        "text": "第8条 本合同项下适用债权人转让债权无需通知，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      },
+      {
+        "index": 8,
+        "text": "第9条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 甲方主张不可撤销，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      }
+    ]
+  },
+  "guarantee_04.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 12,
+    "risk_clauses": 8,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 甲方主张主合同变更无需保证人同意，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "主合同变更",
+        "rule_id": "GU10"
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生保证期间为主债务履行期限届满之日起两年，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用授权债权人直接扣划，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "GU15"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：债权人转让债权无需通知，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      },
+      {
+        "index": 7,
+        "text": "第8条 甲方主张无限连带责任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU05"
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方约定：不可撤销，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      },
+      {
+        "index": 9,
+        "text": "第10条 本合同项下适用共同保证人承担连带责任，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "追偿",
+        "rule_id": "GU13"
+      },
+      {
+        "index": 10,
+        "text": "第11条 甲方主张放弃先诉抗辩权，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU03"
+      },
+      {
+        "index": 11,
+        "text": "第12条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      }
+    ]
+  },
+  "guarantee_05.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 7,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同未尽事宜由双方友好协商解决。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 如发生保证期间为主债务履行期限届满之日起两年，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同附件为本合同不可分割的组成部分。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下适用债权人转让债权无需通知，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下适用不可撤销，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      },
+      {
+        "index": 6,
+        "text": "第7条 甲方主张连带责任保证，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU01"
+      }
+    ]
+  },
+  "guarantee_06.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 9,
+    "risk_clauses": 7,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方约定：连带责任保证，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU01"
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张包括但不限于本金、利息，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU04"
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：共同保证人承担连带责任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "追偿",
+        "rule_id": "GU13"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同项下适用主合同变更无需保证人同意，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "主合同变更",
+        "rule_id": "GU10"
+      },
+      {
+        "index": 4,
+        "text": "第5条 如发生保证期间为主债务履行期限届满之日起两年，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      },
+      {
+        "index": 5,
+        "text": "第6条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生放弃先诉抗辩权，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU03"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 甲方主张保证期间约定不明，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "保证期间",
+        "rule_id": "GU09"
+      }
+    ]
+  },
+  "guarantee_07.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 8,
+    "risk_clauses": 6,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 如发生放弃先诉抗辩权，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU03"
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方约定：授权债权人直接扣划，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "GU15"
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张不可撤销，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：包括但不限于本金、利息，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU04"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用无限连带责任，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU05"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方约定：保证期间为主债务履行期限届满之日起两年，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      }
+    ]
+  },
+  "guarantee_08.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 7,
+    "risk_clauses": 3,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 双方确认已充分阅读并理解本合同全部内容。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张共同保证人承担连带责任，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "追偿",
+        "rule_id": "GU13"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：连带责任保证，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU01"
+      },
+      {
+        "index": 6,
+        "text": "第7条 如发生债权人转让债权无需通知，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      }
+    ]
+  },
+  "guarantee_09.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 12,
+    "risk_clauses": 8,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同项下适用保证期间为主债务履行期限届满之日起两年，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证期间",
+        "rule_id": "GU08"
+      },
+      {
+        "index": 1,
+        "text": "第2条 甲方主张保证期间约定不明，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "保证期间",
+        "rule_id": "GU09"
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 3,
+        "text": "第4条 双方约定：债权人转让债权无需通知，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      },
+      {
+        "index": 4,
+        "text": "第5条 本合同项下的通知以书面形式送达对方预留地址。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：放弃先诉抗辩权，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU03"
+      },
+      {
+        "index": 6,
+        "text": "第7条 本合同项下适用无限连带责任，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证范围",
+        "rule_id": "GU05"
+      },
+      {
+        "index": 7,
+        "text": "第8条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 8,
+        "text": "第9条 双方应当按照约定全面履行各自义务。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 9,
+        "text": "第10条 双方约定：共同保证人承担连带责任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "追偿",
+        "rule_id": "GU13"
+      },
+      {
+        "index": 10,
+        "text": "第11条 如发生授权债权人直接扣划，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "其他",
+        "rule_id": "GU15"
+      },
+      {
+        "index": 11,
+        "text": "第12条 如发生不可撤销，乙方应承担相应后果。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      }
+    ]
+  },
+  "guarantee_10.docx": {
+    "contract_type": "guarantee",
+    "clause_count": 7,
+    "risk_clauses": 4,
+    "clauses": [
+      {
+        "index": 0,
+        "text": "第1条 本合同的订立、效力、解释及争议解决均适用中华人民共和国法律。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 1,
+        "text": "第2条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 2,
+        "text": "第3条 本合同项下适用连带责任保证，具体标准由甲方确定。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "保证方式",
+        "rule_id": "GU01"
+      },
+      {
+        "index": 3,
+        "text": "第4条 本合同自双方签字盖章之日起生效。",
+        "is_risk": false,
+        "level": "无",
+        "risk_type": "",
+        "rule_id": ""
+      },
+      {
+        "index": 4,
+        "text": "第5条 甲方主张债权人转让债权无需通知，乙方不得提出异议。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "主合同变更",
+        "rule_id": "GU11"
+      },
+      {
+        "index": 5,
+        "text": "第6条 双方约定：共同保证人承担连带责任，乙方应予遵守。",
+        "is_risk": true,
+        "level": "中",
+        "risk_type": "追偿",
+        "rule_id": "GU13"
+      },
+      {
+        "index": 6,
+        "text": "第7条 双方约定：不可撤销，乙方应予遵守。",
+        "is_risk": true,
+        "level": "高",
+        "risk_type": "其他",
+        "rule_id": "GU14"
+      }
+    ]
+  }
+}
