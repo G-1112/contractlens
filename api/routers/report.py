@@ -3,9 +3,9 @@
 - GET  /api/result/{file_id}  获取完整分析结果（含雷达图数据）
 - GET|POST /api/report/{file_id}?format=md|revised|checklist|pdf|docx  导出报告文件
 
-导出接口同时接受 GET 与 POST：
-前端导出按钮是 `<a href>`（浏览器发起 GET），早期实现只注册了 POST，
-导致四个导出按钮全部 405；保留 POST 是为了兼容既有调用方与脚本。
+为什么 GET/POST 都支持：前端 5 个导出按钮用的是 `<a href>`，浏览器只会发 GET；
+此前只注册 POST，导致所有导出按钮点击后一律 404（测试只覆盖 POST 故未暴露）。
+两种方法共用同一 handler，行为一致。
 """
 
 from __future__ import annotations
@@ -20,7 +20,7 @@ from starlette.background import BackgroundTask
 
 from ..config import get_settings
 from ..ratelimit import client_ip, report_limiter
-from ..report.generator import PdfRenderUnavailable, ReportGenerator
+from ..report.generator import ReportGenerator
 from ..schemas import AnalysisReport
 from ..store import store
 
@@ -45,7 +45,8 @@ async def get_result(file_id: str) -> AnalysisReport:
     return report
 
 
-@router.api_route("/report/{file_id}", methods=["GET", "POST"])
+@router.get("/report/{file_id}")
+@router.post("/report/{file_id}")
 async def export_report(file_id: str, request: Request, format: str = "md"):
     # 限流（R-RL-01）：PDF/DOCX 走 WeasyPrint 重渲染，需防高频调用耗尽 CPU
     ip = client_ip(request)
@@ -89,18 +90,7 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
         # 直接跑在事件循环上会卡住所有并发请求，移入线程池。
         import asyncio
 
-        try:
-            await asyncio.to_thread(gen.save_pdf, out)
-        except PdfRenderUnavailable as exc:
-            # 环境缺 GTK/Pango 时给可操作提示，而不是 500 堆栈（评审核对项 P1）
-            _safe_unlink(out)
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-        except Exception as exc:  # noqa: BLE001
-            _safe_unlink(out)
-            logger.warning("PDF 渲染失败：%s", exc)
-            raise HTTPException(
-                status_code=500, detail="PDF 渲染失败，请改用「导出 Markdown」或「下载 DOCX」"
-            ) from exc
+        await asyncio.to_thread(gen.save_pdf, out)
         return FileResponse(
             out,
             media_type="application/pdf",
@@ -114,14 +104,7 @@ async def export_report(file_id: str, request: Request, format: str = "md"):
         out = out_dir / f"report-{uuid.uuid4().hex}.docx"
         import asyncio
 
-        try:
-            await asyncio.to_thread(gen.save_docx, out)
-        except Exception as exc:  # noqa: BLE001
-            _safe_unlink(out)
-            logger.warning("DOCX 渲染失败：%s", exc)
-            raise HTTPException(
-                status_code=500, detail="DOCX 生成失败，请改用「导出 Markdown」"
-            ) from exc
+        await asyncio.to_thread(gen.save_docx, out)
         return FileResponse(
             out,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",

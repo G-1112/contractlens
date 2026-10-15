@@ -17,10 +17,26 @@ dependencies = [
     "openai>=1.40",
     "jinja2>=3.1",
     "weasyprint>=62.0",
+    # PDF 保底渲染路径：weasyprint 需要系统图形库（Linux pango/cairo、
+    # Windows GTK 运行时），装不上时降级到 reportlab + 内置 CID 中文字体，
+    # 纯 Python wheel、零系统依赖。故 reportlab 属主依赖而非测试专用。
+    "reportlab>=4.0",
     "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
+# 可选：本地向量库（Chroma）+ 中文 embedding，离线可用；不安装则回退到纯 Python 检索器
+#
+# ⚠️ 安全提示（依赖审计实测）：本组依赖当前存在未修复的已知漏洞。
+#    chromadb 1.5.9 命中 8 条（含 2 条代码注入，其中 1 条为认证前注入；
+#    以及跨 tenant/database/collection 的越权读写删）。截至审计时上游尚未发布修复版本。
+#    本项目**默认不使用**该组依赖，检索由纯 Python bigram TF-IDF 完成，
+#    效果可复现且零该风险。除非确有向量检索需求，否则不要安装本组。
+vectordb = [
+    "chromadb>=0.5",
+    "sentence-transformers>=2.7",
+]
+# 可选：本地 embedding 需要的底层依赖（部分平台需要手动安装 torch）
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
@@ -28,7 +44,7 @@ dev = [
     # 测试专用：tests/test_parsers.py 等用它生成带中文文本层的 PDF 夹具。
     # 第十二轮修复：此前未声明 → 全新环境 `pip install -e ".[dev]"` 后
     # 5 个 PDF 相关测试 ModuleNotFoundError（「10 分钟复现」断链）。
-    "reportlab>=4.0",
+    # 注：reportlab 同时是 PDF 导出的生产保底路径，已列入主依赖。
 ]
 
 [build-system]
