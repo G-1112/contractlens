@@ -187,7 +187,11 @@ class ChatAgent:
         regs = self.search_regulations(question, contract_type)
         trace.append(f"工具·检索法规：命中 {len(regs)} 条")
         for r in regs:
-            sources.append(ChatSource(kind="regulation", ref="法规库", text=r[:300]))
+            # 检索文本自带「[来源·条款号]」前缀，提取为引用标题，前端可追溯
+            m = re.match(r"^\[([^\]]+)\]", r)
+            sources.append(
+                ChatSource(kind="regulation", ref=m.group(1) if m else "法规库", text=r[:300])
+            )
 
         # 工具 3
         risks = self.risk_lookup({c.id for _i, c in hits}, report)
