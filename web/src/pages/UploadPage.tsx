@@ -1,9 +1,11 @@
 import { useCallback, useRef, useState } from "react";
 import { uploadFile } from "../api";
 import { useStore } from "../store/useStore";
-import type { ContractType } from "../types";
+import type { ContractTypeInput } from "../types";
 
-const CONTRACT_TYPES: { value: ContractType; label: string; desc: string }[] = [
+const CONTRACT_TYPES: { value: ContractTypeInput; label: string; desc: string }[] = [
+  // 第十三轮「合同类型自动分类」：解析正文特征词后定型，用户无需判断合同属于哪类
+  { value: "auto", label: "自动识别", desc: "按正文自动判断" },
   { value: "rent", label: "房屋租赁", desc: "租房合同" },
   { value: "labor", label: "劳动合同", desc: "入职合同" },
   { value: "intern", label: "实习协议", desc: "实习协议" },
@@ -63,7 +65,7 @@ export default function UploadPage() {
       </div>
 
       {/* 合同类型 */}
-      <div className="mb-5 grid grid-cols-3 gap-3">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {CONTRACT_TYPES.map((t) => (
           <button
             key={t.value}

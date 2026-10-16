@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { analyze, getDocument, getResult } from "../api";
 import { useStore } from "../store/useStore";
-import type { RiskItem, StreamEvent } from "../types";
+import type { ContractType, RiskItem, StreamEvent } from "../types";
 import RiskCard from "../components/RiskCard";
 
 const STAGE_LABEL: Record<string, string> = {
@@ -9,6 +9,12 @@ const STAGE_LABEL: Record<string, string> = {
   rule: "正在运行规则引擎…",
   judge: "正在 AI 逐条判定…",
   score: "正在生成评分与报告…",
+};
+
+const CONTRACT_LABEL: Record<ContractType, string> = {
+  rent: "房屋租赁合同",
+  labor: "劳动合同",
+  intern: "实习协议",
 };
 
 export default function AnalyzePage() {
@@ -26,8 +32,11 @@ export default function AnalyzePage() {
     setReport,
     setDocument,
     setStage,
+    setContractType,
   } = useStore();
   const started = useRef(false);
+  // 第十三轮自动分类：记住「本次为 auto 且已识别」，用于向用户明示定型结果
+  const [detected, setDetected] = useState<ContractType | null>(null);
 
   useEffect(() => {
     if (started.current || !fileId) return;
@@ -38,7 +47,10 @@ export default function AnalyzePage() {
       try {
         await analyze(fileId, contractType, async (e: StreamEvent) => {
           if (e.type === "progress") setProgress({ ...e });
-          else if (e.type === "risk") appendRisk(e.data);
+          else if (e.type === "contract_type_detected") {
+            setContractType(e.data);
+            setDetected(e.data);
+          } else if (e.type === "risk") appendRisk(e.data);
           else if (e.type === "error") setError(e.message ?? e.code);
           else if (e.type === "done") {
             // 拉取最终报告与文档
@@ -57,7 +69,7 @@ export default function AnalyzePage() {
     })();
 
     return () => ctrl.abort();
-  }, [fileId, contractType, appendRisk, setProgress, setError, setReport, setDocument, setStage]);
+  }, [fileId, contractType, appendRisk, setProgress, setError, setReport, setDocument, setStage, setContractType]);
 
   const total = progress?.total ?? 0;
   const current = progress?.current ?? 0;
@@ -70,6 +82,11 @@ export default function AnalyzePage() {
         <p className="mt-1 text-sm text-slate-500">
           {uploadInfo ? `${uploadInfo.page_count} 页 · 规则 + AI 双引擎判定` : ""}
         </p>
+        {detected && (
+          <p className="mt-1 inline-block rounded-full bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
+            已自动识别为：{CONTRACT_LABEL[detected]}
+          </p>
+        )}
       </div>
 
       {/* 进度条 */}

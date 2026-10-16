@@ -20,8 +20,16 @@ def client(tmp_path, monkeypatch):
     """隔离：上传目录指向临时目录，并清空全局 store 单例。"""
     settings = get_settings()
     monkeypatch.setattr(settings, "upload_dir", tmp_path)
+    # 限流器是进程级单例：同 session 内其他测试文件的上传/分析请求会耗尽
+    # 配额，导致本文件用例被误判 429 → 用例前后重置（第十三轮测试基建修复）。
+    from api.ratelimit import analyze_limiter, upload_limiter
+
+    upload_limiter.reset()
+    analyze_limiter.reset()
     _reset_store()
     yield TestClient(app)
+    upload_limiter.reset()
+    analyze_limiter.reset()
     _reset_store()
 
 

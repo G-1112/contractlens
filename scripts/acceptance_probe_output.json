@@ -60,7 +60,7 @@
           "隐私": 100.0
         },
         "talk_scripts": 5,
-        "elapsed_ms": 58.9
+        "elapsed_ms": 19.6
       },
       "劳动合同样本.docx": {
         "clauses": 14,
@@ -84,7 +84,7 @@
           "违约金": 80.0
         },
         "talk_scripts": 5,
-        "elapsed_ms": 60.6
+        "elapsed_ms": 26.8
       },
       "实习协议样本.docx": {
         "clauses": 11,
@@ -108,7 +108,7 @@
           "违约金": 92.0
         },
         "talk_scripts": 5,
-        "elapsed_ms": 41.0
+        "elapsed_ms": 18.1
       }
     },
     {
@@ -131,7 +131,7 @@
         "rule_only": 7
       },
       "all_rule_only": true,
-      "elapsed_ms": 42.5
+      "elapsed_ms": 16.2
     },
     {
       "id": "A5",
@@ -151,6 +151,26 @@
       "injection_text_in_prompt": false,
       "script_for_injection_is_template": true,
       "benign_clause_reached_llm": true
+    },
+    {
+      "id": "A8",
+      "name": "合同类型自动分类（抹名样本按正文判定）",
+      "pass": true,
+      "房屋租赁合同样本.docx": {
+        "expected": "rent",
+        "detected": "rent",
+        "match": true
+      },
+      "劳动合同样本.docx": {
+        "expected": "labor",
+        "detected": "labor",
+        "match": true
+      },
+      "实习协议样本.docx": {
+        "expected": "intern",
+        "detected": "intern",
+        "match": true
+      }
     }
   ]
 }

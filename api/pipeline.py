@@ -75,12 +75,22 @@ def parse_file(path: str | Path, filename: str, contract_type: str) -> ParsedDoc
     )
 
 
-def detect_contract_type(filename: str) -> str:
-    """根据文件名/内容粗判合同类型（前端可选，后端兜底 rent）。
+def detect_contract_type(filename: str, sample_text: str = "") -> str:
+    """判定合同类型：文件名先验，文件名无类型词时按正文特征词打分。
 
     第十二轮修复（潜伏 bug）：原实现把通用词「合同」当成 labor 关键词，
     「房屋租赁合同.docx」被误判为 labor。判断顺序改为 实习 → 劳动（去掉
     通用词「合同」，保留「劳务」）→ 租赁 → 兜底 rent。
+
+    第十三轮增强（自动分类）：文件名不含任何类型词时（如「合同.docx」），
+    用正文特征词加权打分判定。特征词表按「标题型 ×3 / 强特征 ×1」两级
+    加权，取自三份样本合同正文实测（2026-10-17）：
+      - rent 样本：房屋 12 / 租金 7 / 押金 5 / 物业 1 / 退租 1
+      - labor 样本：劳动合同 2 / 工资 4 / 试用期 4 / 离职 1
+      - intern 样本：实习协议 1 / 实习期 8
+    「甲方/乙方」三类合同均高频出现，**刻意不收**——通用词正是上一轮
+    误判的根因。文件名命中时永远以文件名为准（命名通常准确），
+    内容打分只在文件名无类型词时介入，行为完全向后兼容。
     """
     name = filename.lower()
     if any(k in name for k in ("实习", "intern")):
@@ -89,7 +99,31 @@ def detect_contract_type(filename: str) -> str:
         return "labor"
     if any(k in name for k in ("租", "rent")):
         return "rent"
-    return "rent"
+
+    if not sample_text:
+        return "rent"
+    scores = _score_by_content(sample_text)
+    if not scores or scores[0][1] == 0 or (len(scores) > 1 and scores[0][1] == scores[1][1]):
+        return "rent"  # 无特征词或最高分并列 → 兜底
+    return scores[0][0]
+
+
+# 内容特征词表：标题型（合同种类自述，权重 3）/ 强特征（仅本类高频，权重 1）
+_CONTENT_FEATURES: dict[str, dict[str, int]] = {
+    "intern": {"实习协议": 3, "实习单位": 3, "实习生": 3, "顶岗": 3, "校企": 3,
+               "实习期": 1, "实习证明": 1, "指导老师": 1},
+    "labor": {"劳动合同": 3, "劳动协议": 3, "用人单位": 3, "用工协议": 3,
+              "劳动者": 1, "工资": 1, "社保": 1, "试用期": 1, "加班费": 1,
+              "离职": 1, "解除劳动合同": 1},
+    "rent": {"租赁合同": 3, "房屋租赁": 3, "出租方": 3, "承租方": 3,
+             "房屋": 1, "租金": 1, "押金": 1, "物业": 1, "退租": 1, "中介费": 1},
+}
+
+
+def _score_by_content(text: str) -> list[tuple[str, int]]:
+    """按特征词表对正文打分，返回 [(类型, 分数), ...] 降序。"""
+    scores = {t: sum(w for word, w in words.items() if word in text) for t, words in _CONTENT_FEATURES.items()}
+    return sorted(scores.items(), key=lambda kv: -kv[1])
 
 
 def _run_rule_engine(clauses: list[Clause], contract_type: str) -> list[RuleHit]:

@@ -18,7 +18,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..pipeline import parse_file, run_analysis_streaming
+from ..pipeline import detect_contract_type, parse_file, run_analysis_streaming
 from ..ratelimit import analyze_limiter, client_ip
 from ..store import store
 
@@ -28,8 +28,20 @@ router = APIRouter(prefix="/api", tags=["analyze"])
 
 
 class AnalyzeRequest(BaseModel):
+    # contract_type 支持 rent / labor / intern / auto；
+    # auto = 第十三轮「合同类型自动分类」：解析后按正文特征词判定（见 pipeline.detect_contract_type）
     file_id: str
     contract_type: str = "rent"
+
+
+def _resolve_contract_type(req_type: str, entry: dict, parsed) -> str:
+    """auto → 文件名先验 + 正文特征词判定；其余原样返回。"""
+    if req_type != "auto":
+        return req_type
+    text = "\n".join(ln.text for ln in parsed.lines)
+    resolved = detect_contract_type(entry["filename"], text)
+    parsed.contract_type = resolved  # type: ignore[assignment]  # 回写，供 GET /document 一致展示
+    return resolved
 
 
 @router.get("/document/{file_id}")
@@ -72,7 +84,11 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
             yield _sse({"type": "progress", "stage": "parse", "current": 0, "total": 0})
             # 第十二轮修复（实证 P2）：pdfplumber/python-docx 解析是重 CPU 同步操作，
             # 直接跑在事件循环上会卡住所有并发 SSE 流，移入线程池。
-            parsed = await asyncio.to_thread(parse_file, entry["path"], entry["filename"], req.contract_type)
+            parsed = await asyncio.to_thread(parse_file, entry["path"], entry["filename"], req.contract_type if req.contract_type != "auto" else "rent")
+            contract_type = _resolve_contract_type(req.contract_type, entry, parsed)
+            if req.contract_type == "auto":
+                # 前端据此展示「已自动识别为：劳动合同」而不是静默使用兜底类型
+                yield _sse({"type": "contract_type_detected", "data": contract_type})
             if not parsed.has_text_layer:
                 yield _sse(
                     {
@@ -95,7 +111,7 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
             async def _run() -> None:
                 try:
                     report = await run_analysis_streaming(
-                        parsed, req.contract_type, req.file_id, _collect
+                        parsed, contract_type, req.file_id, _collect
                     )
                     store.put_report(req.file_id, report)
                 except Exception as e:  # noqa: BLE001

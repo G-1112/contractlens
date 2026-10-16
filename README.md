@@ -32,7 +32,7 @@ contractlens/
 ├── data/
 │   ├── regulations/     # 法规片段（rent/labor/intern.json）
 │   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（收集 176 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
+├── tests/               # 单元 + 集成测试（收集 193 项，覆盖解析/规则/融合/评分/安全/路由/自动分类全链路）
 ├── scripts/             # make_sample_docx.py（生成可上传的样本）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
@@ -122,7 +122,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：176 passed（含安全/并发/路由集成回归测试）
+# 预期：193 passed（含安全/并发/路由集成回归测试 + 自动分类测试）
 ```
 
 ### 第 7 步：验收指标实测（可选）
@@ -139,13 +139,18 @@ pytest -q
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/upload` | 上传 PDF/DOCX → `{file_id, has_text_layer, page_count}` |
-| POST | `/api/analyze` | SSE 流式分析，逐条推送 `progress / risk / done` 事件 |
+| POST | `/api/upload` | 上传 PDF/DOCX → `{file_id, has_text_layer, page_count}`；`contract_type` 支持 `rent/labor/intern/auto`（auto = 按正文自动分类） |
+| POST | `/api/analyze` | SSE 流式分析，逐条推送 `progress / risk / done` 事件；`contract_type=auto` 时额外推送 `contract_type_detected` 定型事件 |
 | GET | `/api/document/{file_id}` | 获取条款树（前端原文高亮） |
 | GET | `/api/result/{file_id}` | 获取完整分析结果（含雷达） |
 | POST | `/api/script` | 生成谈判话术 |
 | POST | `/api/report/{file_id}?format=md|pdf|docx` | 导出报告 |
 | GET | `/api/health` | 健康检查（显示 LLM 是否启用） |
+
+> **合同类型自动分类**（`contract_type=auto`）：文件名含类型词时以文件名为准；
+> 不含时（如「合同.docx」）按正文特征词加权打分判定（标题型 ×3 / 强特征 ×1，
+> 「甲方/乙方」等通用词刻意不收——那是早期误判的根因）。判定结果经 SSE
+> `contract_type_detected` 事件回传前端明示，不静默兜底。
 
 ---
 

@@ -14,6 +14,8 @@
     A4 NFR-04 LLM 故障降级         —— judge 全量抛 LLMUnavailable，须全 rule_only 且流程不崩
     A5 R-INJ-01 注入防护端到端     —— 注入合同 → injection_flagged/needs_review/等级不降级
     A6 话术链路注入收口            —— 疑似注入条款不得进入 LLM 调用（单点验证）
+    A7 测试与覆盖率                —— pytest 收集数 + 行覆盖率（由单独命令测量）
+    A8 合同类型自动分类            —— 真实样本抹名后仅凭正文判回各自类型
 """
 
 from __future__ import annotations
@@ -272,6 +274,27 @@ def probe_script_channel() -> None:
     record("A6", "话术链路注入收口", ok, out)
 
 
+# --------------------------------------------------------------------------- #
+# A8 合同类型自动分类（auto）：真实样本抹名后仅凭正文判回各自类型
+# --------------------------------------------------------------------------- #
+def probe_auto_classify() -> None:
+    from api.pipeline import detect_contract_type
+
+    cases = {}
+    ok = True
+    for name, ct in [
+        ("房屋租赁合同样本.docx", "rent"),
+        ("劳动合同样本.docx", "labor"),
+        ("实习协议样本.docx", "intern"),
+    ]:
+        parsed = parse_file(ROOT / "data" / "samples" / name, name, ct)
+        text = "\n".join(ln.text for ln in parsed.lines)
+        detected = detect_contract_type("未命名合同.docx", text)
+        cases[name] = {"expected": ct, "detected": detected, "match": detected == ct}
+        ok = ok and detected == ct
+    record("A8", "合同类型自动分类（抹名样本按正文判定）", ok, cases)
+
+
 def main() -> int:
     print(f"== A 赛道验收指标实测 ==  llm_enabled={SETTINGS.llm_enabled}（零 Key mock 模式）\n")
     probe_rules()
@@ -280,6 +303,7 @@ def main() -> int:
     probe_degradation()
     probe_injection_e2e()
     probe_script_channel()
+    probe_auto_classify()
 
     out_path = ROOT / "scripts" / "acceptance_probe_output.json"
     out_path.write_text(json.dumps(RESULTS, ensure_ascii=False, indent=2), encoding="utf-8")

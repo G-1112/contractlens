@@ -12,6 +12,9 @@ from pydantic import BaseModel, Field
 # 风险等级。规范全项目用中文常量，避免"high/medium/low"字符串混用。
 RiskLevel = Literal["高", "中", "低", "无"]
 ContractType = Literal["rent", "labor", "intern"]
+# 第十三轮「合同类型自动分类」：上传请求/回显层允许 auto（分析时解析正文后定型）。
+# 注意 ParsedDocument 等内部结构仍用 ContractType——auto 不得流入规则引擎。
+ContractTypeOrAuto = Literal["rent", "labor", "intern", "auto"]
 
 
 # ---------------------------------------------------------------------------
@@ -121,7 +124,8 @@ class UploadResult(BaseModel):
     file_id: str
     has_text_layer: bool
     page_count: int
-    contract_type: ContractType = "rent"
+    # 回显用户选择：可能是 auto（精确判定在 /api/analyze 解析后进行）
+    contract_type: ContractTypeOrAuto = "rent"
     filename: str = ""
 
 

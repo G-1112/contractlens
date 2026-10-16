@@ -103,7 +103,9 @@ async def upload(
             status_code=415, detail=f"文件内容与 {suffix} 格式不符，可能已损坏或被伪装"
         )
 
-    if contract_type not in ("rent", "labor", "intern"):
+    # auto = 第十三轮「合同类型自动分类」：上传阶段只按文件名判（无正文），
+    # 精确判定推迟到 /api/analyze 解析后按正文特征词进行（见 analyze._resolve_contract_type）
+    if contract_type not in ("rent", "labor", "intern", "auto"):
         contract_type = "rent"
 
     file_id = uuid.uuid4().hex

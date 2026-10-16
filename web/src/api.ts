@@ -1,6 +1,6 @@
 import type {
   AnalysisReport,
-  ContractType,
+  ContractTypeInput,
   DocumentResponse,
   StreamEvent,
   UploadResult,
@@ -10,7 +10,7 @@ const BASE = "/api";
 
 export async function uploadFile(
   file: File,
-  contractType: ContractType,
+  contractType: ContractTypeInput,
 ): Promise<UploadResult> {
   const form = new FormData();
   form.append("file", file);
@@ -38,7 +38,7 @@ export async function getResult(fileId: string): Promise<AnalysisReport> {
  */
 export async function analyze(
   fileId: string,
-  contractType: ContractType,
+  contractType: ContractTypeInput,
   onEvent: (e: StreamEvent) => void,
   signal?: AbortSignal,
 ): Promise<void> {

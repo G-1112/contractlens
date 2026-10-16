@@ -2,6 +2,8 @@
 
 export type RiskLevel = "高" | "中" | "低" | "无";
 export type ContractType = "rent" | "labor" | "intern";
+/** 用户输入层类型：auto = 合同类型自动分类（后端解析正文后定型） */
+export type ContractTypeInput = ContractType | "auto";
 export type Source = "both" | "rule_override" | "llm_only" | "rule_only";
 
 export interface Clause {
@@ -50,7 +52,8 @@ export interface UploadResult {
   file_id: string;
   has_text_layer: boolean;
   page_count: number;
-  contract_type: ContractType;
+  /** 回显用户选择：可能是 auto（精确判定在 /api/analyze 解析后进行） */
+  contract_type: ContractTypeInput;
   filename: string;
 }
 
@@ -68,6 +71,11 @@ export interface ProgressEvent {
   current: number;
   total: number;
 }
+/** 第十三轮自动分类：仅当请求 contract_type=auto 时推送，告知前端定型结果 */
+export interface ContractTypeDetectedEvent {
+  type: "contract_type_detected";
+  data: ContractType;
+}
 export interface RiskEvent {
   type: "risk";
   data: RiskItem;
@@ -82,4 +90,9 @@ export interface ErrorEvent {
   fallback?: string;
   message?: string;
 }
-export type StreamEvent = ProgressEvent | RiskEvent | DoneEvent | ErrorEvent;
+export type StreamEvent =
+  | ProgressEvent
+  | ContractTypeDetectedEvent
+  | RiskEvent
+  | DoneEvent
+  | ErrorEvent;
