@@ -125,6 +125,14 @@ pytest -q
 # 预期：176 passed（含安全/并发/路由集成回归测试）
 ```
 
+### 第 7 步：验收指标实测（可选）
+
+```bash
+.venv/Scripts/python.exe scripts/acceptance_probe.py
+# 预期：6/6 通过（规则库规模 / 零 Key 端到端 / 评分确定性 / LLM 降级 /
+#       注入防护 / 话术链路收口），明细见 scripts/acceptance_probe_output.json
+```
+
 ---
 
 ## 接口一览
