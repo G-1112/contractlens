@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 
 from ..engine import LlmEngine
-from ..ratelimit import client_ip, script_limiter
+from ..ratelimit import client_ip, llm_budget, script_limiter
 from ..report.generator import generate_talk_scripts
 from ..schemas import ScriptRequest, ScriptResult
 from ..store import store
@@ -26,6 +26,14 @@ async def script(req: ScriptRequest, request: Request) -> ScriptResult:
             status_code=429,
             detail=f"请求过于频繁，请 {script_limiter.retry_after(ip)} 秒后重试",
             headers={"Retry-After": str(script_limiter.retry_after(ip))},
+        )
+
+    # LLM 日配额闸门（成本兜底）：与每分钟 IP 限流叠加，日调用量封顶
+    _ok, _remaining = llm_budget.allow()
+    if not _ok:
+        raise HTTPException(
+            status_code=429,
+            detail="今日演示调用额度已用尽，请稍后再试",
         )
 
     report = store.get_report(req.file_id)

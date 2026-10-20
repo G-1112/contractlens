@@ -19,7 +19,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from ..pipeline import parse_file, run_analysis_streaming
-from ..ratelimit import analyze_limiter, client_ip
+from ..ratelimit import analyze_limiter, client_ip, llm_budget
 from ..store import store
 
 logger = logging.getLogger(__name__)
@@ -62,6 +62,14 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
         raise HTTPException(
             status_code=429,
             detail=f"分析请求过于频繁，请 {analyze_limiter.retry_after(ip)} 秒后再试",
+        )
+
+    # LLM 日配额闸门（成本兜底）：与每分钟 IP 限流叠加，日调用量封顶
+    _ok, _remaining = llm_budget.allow()
+    if not _ok:
+        raise HTTPException(
+            status_code=429,
+            detail="今日演示调用额度已用尽，请稍后再试",
         )
     entry = store.get_upload(req.file_id)
     if entry is None:
