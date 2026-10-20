@@ -60,6 +60,40 @@ async def security_headers(request: Request, call_next) -> Response:
     return response
 
 
+# ---------------------------------------------------------------------------
+# 评审访问门禁（R-AUTH-01）
+# ---------------------------------------------------------------------------
+# 为什么要做：公网部署后服务对所有人开放，任何人都能触发真实 LLM 调用（烧 Key）
+# 并上传文件。赛事要求提交「智能体链接 + 账号密码」，但本项目刻意不做账号系统
+# （不采集个人信息，符合最小化原则），故用一道共享访问口令代替账号。
+#
+# 行为：
+#   - REVIEW_ACCESS_CODE 未设置（默认）→ 门禁关闭，本地开发与既有测试零影响；
+#   - 已设置 → /api/* 业务端点需带 X-Review-Code 头或 ?code= 查询参数；
+#   - /api/health 放行（部署平台健康检查依赖它），静态资源放行（否则页面打不开）。
+# 口令用 compare_digest 常量时间比较，避免计时侧信道。
+_GUARD_EXEMPT = {"/api/health"}
+
+
+@app.middleware("http")
+async def review_access_guard(request: Request, call_next) -> Response:
+    expected = get_settings().review_access_code
+    path = request.url.path
+    if not expected or not path.startswith("/api/") or path in _GUARD_EXEMPT:
+        return await call_next(request)
+
+    import hmac
+
+    provided = request.headers.get("x-review-code") or request.query_params.get("code", "")
+    if not hmac.compare_digest(provided.encode(), expected.encode()):
+        return Response(
+            content='{"detail":"需要评审访问口令：请在请求头 X-Review-Code 传入"}',
+            status_code=401,
+            media_type="application/json",
+        )
+    return await call_next(request)
+
+
 app.include_router(upload.router)
 app.include_router(analyze.router)
 app.include_router(script.router)
