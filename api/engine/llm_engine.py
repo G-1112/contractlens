@@ -10,12 +10,15 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 from typing import Any
 
 from pydantic import ValidationError
 
 from ..schemas import Clause, LlmJudgement
+
+logger = logging.getLogger(__name__)
 
 # 系统 Prompt（对应文档第 8 节，版本化管理见 docs/prompt-log/）
 _SYSTEM_PROMPT = """你是合同条款风险审查助手。对给定条款输出严格 JSON，不要输出其他任何内容。
@@ -135,6 +138,15 @@ class LlmEngine:
             api_key=self.settings.llm_api_key,
             base_url=self.settings.llm_base_url,
             timeout=self.settings.llm_timeout_seconds,
+        )
+        # 只记录长度与模型，**绝不记录 Key 内容**（公网部署时排障需要知道
+        # 「Key 有没有读到」，但日志会流向平台/第三方，不应携带凭据本身）。
+        logger.info(
+            "LLM 已启用 model=%s base_url=%s key_loaded=%s key_len=%d",
+            self.settings.llm_model,
+            self.settings.llm_base_url,
+            bool(self.settings.llm_api_key),
+            len(self.settings.llm_api_key),
         )
 
     # ------------------------------------------------------------------
