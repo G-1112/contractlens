@@ -2,9 +2,14 @@ import { useState } from "react";
 
 interface Props {
   scripts: string[];
+  /** 按需生成中（分析阶段不再内联生成，进入报告页后才发起） */
+  loading?: boolean;
+  /** 生成失败时的可重试提示 */
+  error?: string | null;
+  onRetry?: () => void;
 }
 
-export default function TalkScript({ scripts }: Props) {
+export default function TalkScript({ scripts, loading, error, onRetry }: Props) {
   const [copied, setCopied] = useState<number | null>(null);
 
   const copy = async (text: string, i: number) => {
@@ -16,6 +21,33 @@ export default function TalkScript({ scripts }: Props) {
       /* 忽略剪贴板失败 */
     }
   };
+
+  if (loading) {
+    return (
+      <div
+        className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-400"
+        data-testid="talk-script-loading"
+      >
+        正在生成谈判话术…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+        {error}
+        {onRetry && (
+          <button
+            onClick={onRetry}
+            className="ml-2 rounded-md bg-amber-100 px-2 py-1 text-xs font-medium hover:bg-amber-200"
+          >
+            重试
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (scripts.length === 0) {
     return (

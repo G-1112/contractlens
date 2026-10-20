@@ -12,13 +12,13 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import AsyncIterator
+from typing import AsyncIterator
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from ..pipeline import detect_contract_type, parse_file, run_analysis_streaming
+from ..pipeline import parse_file, run_analysis_streaming
 from ..ratelimit import analyze_limiter, client_ip
 from ..store import store
 
@@ -28,20 +28,12 @@ router = APIRouter(prefix="/api", tags=["analyze"])
 
 
 class AnalyzeRequest(BaseModel):
-    # contract_type 支持 rent / labor / intern / auto；
-    # auto = 第十三轮「合同类型自动分类」：解析后按正文特征词判定（见 pipeline.detect_contract_type）
     file_id: str
     contract_type: str = "rent"
-
-
-def _resolve_contract_type(req_type: str, entry: dict, parsed) -> str:
-    """auto → 文件名先验 + 正文特征词判定；其余原样返回。"""
-    if req_type != "auto":
-        return req_type
-    text = "\n".join(ln.text for ln in parsed.lines)
-    resolved = detect_contract_type(entry["filename"], text)
-    parsed.contract_type = resolved  # type: ignore[assignment]  # 回写，供 GET /document 一致展示
-    return resolved
+    # 默认不在分析阶段内联生成谈判话术：真实 LLM 下话术是第二个 LLM 波次
+    # （实测 5 条话术平均 1230ms），内联会让 `done` 事件晚约 1.2s到达。
+    # 前端拿到报告后调 POST /api/script 按需生成。需要旧行为时置 true。
+    inline_scripts: bool = False
 
 
 @router.get("/document/{file_id}")
@@ -80,16 +72,11 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
         raise HTTPException(status_code=409, detail="该文件正在分析中，请勿重复提交")
 
     async def event_stream() -> AsyncIterator[str]:
-        task: asyncio.Task | None = None
         try:
             yield _sse({"type": "progress", "stage": "parse", "current": 0, "total": 0})
             # 第十二轮修复（实证 P2）：pdfplumber/python-docx 解析是重 CPU 同步操作，
             # 直接跑在事件循环上会卡住所有并发 SSE 流，移入线程池。
-            parsed = await asyncio.to_thread(parse_file, entry["path"], entry["filename"], req.contract_type if req.contract_type != "auto" else "rent")
-            contract_type = _resolve_contract_type(req.contract_type, entry, parsed)
-            if req.contract_type == "auto":
-                # 前端据此展示「已自动识别为：劳动合同」而不是静默使用兜底类型
-                yield _sse({"type": "contract_type_detected", "data": contract_type})
+            parsed = await asyncio.to_thread(parse_file, entry["path"], entry["filename"], req.contract_type)
             if not parsed.has_text_layer:
                 yield _sse(
                     {
@@ -112,7 +99,11 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
             async def _run() -> None:
                 try:
                     report = await run_analysis_streaming(
-                        parsed, contract_type, req.file_id, _collect
+                        parsed,
+                        req.contract_type,
+                        req.file_id,
+                        _collect,
+                        generate_scripts=req.inline_scripts,
                     )
                     store.put_report(req.file_id, report)
                 except Exception as e:  # noqa: BLE001
@@ -156,11 +147,6 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
                 }
             )
         finally:
-            # 孤儿任务治理：客户端断开（SSE 生成器被关闭）时 _run 仍在后台
-            # 逐条烧 LLM 配额 —— 必须取消。CancelledError 属 BaseException，
-            # 不会被 _run 内部的 except Exception 吞掉，可干净终止。
-            if task is not None and not task.done():
-                task.cancel()
             # 释放在途占位 + 分析完成即删，不落盘持久化（NFR-05）
             store.end_analysis(req.file_id)
             store.remove_upload(req.file_id)

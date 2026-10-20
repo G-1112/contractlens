@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from api.pipeline import run_analysis
 from api.parser import split_clauses
-from api.pipeline import run_analysis, run_analysis_streaming
 from api.schemas import DocumentLine, ParsedDocument
 
 SAMPLES = Path(__file__).resolve().parent.parent / "data" / "samples"
@@ -71,53 +71,25 @@ def test_radar_dimensions_present(name: str, ctype: str):
     assert set(report.radar.keys()) == set(report.radar_dimensions)
 
 
-def test_clause_overflow_truncated(monkeypatch):
-    """条款超限：按文档顺序只分析前 N 条，SSE 提示截断，report 带 truncated 标志。"""
-    from api.config import get_settings
-    from api.schemas import Clause
+def test_skip_talk_scripts_keeps_scoring_intact():
+    """generate_scripts=False：话术为空，但风险条目与总分必须与内联路径一致。
 
-    monkeypatch.setattr(get_settings(), "analyze_max_clauses", 5, raising=False)
-
-    clauses = [
-        Clause(id=f"c-{i:03d}", text=f"第{chr(0x4E00 + i)}条 甲方应按时支付租金。", page=1)
-        for i in range(20)
-    ]
-    parsed = ParsedDocument(
-        lines=[DocumentLine(text=c.text, page=1) for c in clauses],
-        clauses=clauses,
-        page_count=1,
-        contract_type="rent",
-        has_text_layer=True,
-    )
-
-    events: list[dict] = []
-    report = asyncio.run(
-        run_analysis_streaming(parsed, "rent", "test-truncate", events.append)
-    )
-
-    assert report.truncated is True
-    assert report.clause_count == 5
-    # 判定进度总量应为截断后的 5 条
-    judge_events = [e for e in events if e["type"] == "progress" and e["stage"] == "judge"]
-    assert judge_events and judge_events[0]["total"] == 5
-    # 截断提示事件
-    assert any(
-        e["type"] == "progress" and "条款超限，已截断为前 5 条" in e.get("message", "")
-        for e in events
-    )
-    # 风险条目只可能来自前 5 条（缺失检测为文档级，clause_id 以 missing- 开头）
-    assert all(
-        it.clause_id in {c.id for c in clauses[:5]} or it.clause_id.startswith("missing-")
-        for it in report.items
-    )
-
-
-def test_clause_under_limit_not_truncated():
-    """未超限时不截断、无提示、truncated=False。"""
-    events: list[dict] = []
+    背景：真实 LLM 下话术生成是第二个 LLM 波次（实测 3~5s），内联会显著推后
+    SSE `done` 事件。改为报告页按需调POST /api/script 后，必须保证分析结果本身
+    不受影响——否则「更快拿到报告」会以牺牲结论完整性为代价。
+    """
     parsed = _load("房屋租赁合同样本.txt", "rent")
-    report = asyncio.run(
-        run_analysis_streaming(parsed, "rent", "test-no-truncate", events.append)
+    with_scripts = _run(parsed)
+    without_scripts = asyncio.run(
+        run_analysis(parsed, parsed.contract_type, "test", generate_scripts=False)
     )
-    assert report.truncated is False
-    assert not any("截断" in e.get("message", "") for e in events)
+
+    assert without_scripts.talk_scripts == [], "跳过话术时应为空，由前端按需补生成"
+    assert without_scripts.total_score == with_scripts.total_score
+    assert len(without_scripts.items) == len(with_scripts.items)
+    assert [it.clause_id for it in without_scripts.items] == [
+        it.clause_id for it in with_scripts.items
+    ]
+    assert [it.final_level for it in without_scripts.items] == [
+        it.final_level for it in with_scripts.items
+    ]
