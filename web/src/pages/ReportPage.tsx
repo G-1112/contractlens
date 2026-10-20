@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "../store/useStore";
 import ScoreGauge from "../components/ScoreGauge";
 import RadarChart from "../components/RadarChart";
@@ -7,7 +7,7 @@ import RiskCard from "../components/RiskCard";
 import TalkScript from "../components/TalkScript";
 import ChatPanel from "../components/ChatPanel";
 import CopyButton from "../components/CopyButton";
-import { reportDownloadUrl } from "../api";
+import { generateScript, reportDownloadUrl } from "../api";
 import { buildRewriteDigest } from "../utils/clipboard";
 
 type LevelFilter = "全部" | "高" | "中" | "低";
@@ -32,6 +32,40 @@ export default function ReportPage() {
       return true;
     });
   }, [report, level, keyword]);
+
+  // 谈判话术按需生成：分析阶段默认不再内联生成（真实 LLM 下那是第二个 LLM 波次，
+  // 实测3~5s，会把 `done` 事件显著推后）。报告页拿到结果后再补生成，首屏更快。
+  const [scripts, setScripts] = useState<string[]>([]);
+  const [scriptLoading, setScriptLoading] = useState(false);
+  const [scriptError, setScriptError] = useState<string | null>(null);
+  const scriptRequested = useRef(false);
+
+  const fetchScripts = () => {
+    if (!report || !fileId) return;
+    const targets = report.items
+      .filter((it) => it.final_level === "高" || it.final_level === "中")
+      .map((it) => it.clause_id);
+    if (targets.length === 0) return;
+    setScriptLoading(true);
+    setScriptError(null);
+    generateScript(fileId, targets)
+      .then(setScripts)
+      .catch(() => setScriptError("谈判话术生成失败，可点击重试"))
+      .finally(() => setScriptLoading(false));
+  };
+
+  useEffect(() => {
+    if (!report || !fileId) return;
+    // 兼容 inline_scripts=true 的旧路径：报告里已带话术则直接用
+    if (report.talk_scripts && report.talk_scripts.length > 0) {
+      setScripts(report.talk_scripts);
+      return;
+    }
+    if (scriptRequested.current) return;
+    scriptRequested.current = true;
+    fetchScripts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [report, fileId]);
 
   if (!report || !fileId) return null;
 
@@ -207,7 +241,12 @@ export default function ReportPage() {
         <h3 className="mb-2 text-sm font-semibold text-slate-700">
           谈判话术（可直接发送）
         </h3>
-        <TalkScript scripts={report.talk_scripts} />
+        <TalkScript
+          scripts={scripts}
+          loading={scriptLoading}
+          error={scriptError}
+          onRetry={fetchScripts}
+        />
       </div>
 
       {/* 追问对话（FR-11：Agent 化，回答可追溯） */}
