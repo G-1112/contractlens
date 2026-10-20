@@ -2,7 +2,7 @@
 
 > 上传一份合同，拿到逐条风险标注、通俗解释、修改建议，以及一段可以直接发给对方的谈判话术。
 
-针对**房屋租赁合同 / 劳动合同 / 实习协议**三类合同，做一条**文档处理流水线**（而非聊天框）：
+针对**房屋租赁合同 / 劳动合同 / 实习协议 / 借款合同 / 保证合同**五类合同，做一条**文档处理流水线**（而非聊天框）：
 
 ```
 解析 → 结构化切分 → 规则 + LLM 双引擎判定 → 可视化呈现 → 可交付的修订稿
@@ -11,7 +11,7 @@
 - 后端：Python 3.11+ / FastAPI / pdfplumber / python-docx / Pydantic / PyYAML
 - 前端：React 18 / TypeScript / Vite / TailwindCSS / Zustand / ECharts
 - 判定：规则引擎（确定性） + LLM（语义）双引擎融合，LLM 失败自动降级为纯规则
-- 检索：法规片段轻量 RAG（纯 Python 字符级 bigram TF-IDF 稀疏向量，零模型下载、离线可复现）
+- 检索：法规片段 RAG（默认纯 Python 字符级 TF-IDF，可选 ChromaDB + bge-small-zh）
 
 ---
 
@@ -25,18 +25,45 @@ contractlens/
 │   ├── routers/         # upload / analyze(SSE) / script / report
 │   ├── parser/          # pdf/docx 解析 + 条款切分（零 LLM 依赖）
 │   ├── engine/          # rule_engine / llm_engine / fusion / retriever / scoring
-│   ├── rules/           # rent.yaml / labor.yaml / intern.yaml（82 条规则）
+│   ├── rules/           # rent/labor/intern/loan/guarantee.yaml（111 条规则）
 │   ├── report/          # 谈判话术 + 报告导出（md/docx/pdf）
 │   └── schemas/         # Pydantic 数据模型
 ├── web/                 # React 前端
 ├── data/
-│   ├── regulations/     # 法规片段（rent/labor/intern.json）
-│   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（收集 203 项，覆盖解析/规则/融合/评分/安全/路由/自动分类/导出契约全链路）
-├── scripts/             # make_sample_docx.py（生成可上传的样本）
+│   ├── regulations/     # 法规片段（5 类 × 25~30 条，合计 140 条）
+│   ├── samples/         # 6 份含风险条款的样本合同（含 1 份提示注入攻击样本）
+│   └── evalset/          # 合成标注集 50 份 + labels.json
+├── tests/               # 单元 + 集成测试（收集 198 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
+├── scripts/             # 样本生成 / 评测 / 验收脚本（见下）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
 ```
+
+---
+
+## 📊 脚本一览（全部可复跑）
+
+| 脚本 | 作用 | 典型用法 |
+|---|---|---|
+| `make_sample_docx.py` / `make_finance_samples.py` | 生成可上传的样本合同（含注入攻击样本） | `python scripts/make_finance_samples.py` |
+| `build_evalset.py` / `evaluate_accuracy.py` | 合成标注集 + 条款级 P/R/F1 | `python scripts/evaluate_accuracy.py` |
+| `evaluate_finance.py` | 金融方向端到端 + 性能基线，**报告头自动自证 mock/真实 LLM 口径** | `python scripts/evaluate_finance.py` |
+| `e2e_smoke.py` | 端到端 HTTP 冒烟（健康/审查/法条/注入/对话） | `python scripts/e2e_smoke.py <base_url>` |
+| `verify_export_online.py` | 线上五格式导出复验（PDF 魔数 + 404 路径） | `python scripts/verify_export_online.py <base_url>` |
+| `scan_anonymity.py` | **匿名评审脱敏闸门**：命中学校/姓名/学号/导师/邮箱即退出码 1 | `python scripts/scan_anonymity.py` |
+
+## ⚖️ 两种运行口径的实测差异（务必按口径引用数字）
+
+同一份 `借款合同样本.docx`，本机实测：
+
+| 口径 | 条款 | 高 | 中 | 低 | 总分 | 分析耗时 |
+|---|---|---|---|---|---|---|
+| mock 离线（无 Key） | 12 | 5 | 3 | 0 | 33 | **34.9 ms** |
+| 真实 LLM（deepseek-chat，并发 8） | 12 | 7 | 2 | 3~4 | 27 | **7.0 ~ 11.0 s** |
+
+差异来源：LLM 覆盖规则未枚举的长尾，额外产出「低」风险；耗时升两个数量级。
+且 `temperature=0` 下真实 LLM 仍有跨次波动（保证合同实测出现「高5中6」与「高6中5」），
+因此**对外引用请写明口径与区间，不要写单点值**。
 
 ---
 
@@ -66,27 +93,9 @@ pip install -e ".[dev]"
 > 用 pip 安装则只会按 `pyproject.toml` 的 `>=` 约束解析，**结果可能不同**。
 > 若只需最小运行集，用 `uv sync`（不带 `--extra dev`）即可。
 >
-> 报告 PDF 导出依赖 `weasyprint`（需系统 cairo/pango，见下文「可选：PDF 导出」）。
-> 装不上时系统不会报错崩溃：报告页的「导出 Word」与「导出 Markdown」照常可用，
-> 点「导出 PDF」会给出明确指引。`pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
-
-#### 可选：PDF 导出
-
-PDF 由 WeasyPrint 渲染，它需要系统级 GTK/Pango 运行库（Linux: `libpango`；Windows: GTK3 运行时）。
-
-| 平台 | 安装方式 | 说明 |
-|---|---|---|
-| Linux (Debian/Ubuntu) | `apt install libpango-1.0-0 libpangoft2-1.0-0` | 通常已随桌面环境预装 |
-| Windows | 安装 GTK3 Runtime（MSYS2 `mingw-w64-x86_64-gtk3` 或 gvsbuild 发行包），并把 `bin` 加入 `PATH` | 未装时 `import weasyprint` 会抛 `OSError: cannot load library 'libgobject-2.0-0'` |
-| macOS | `brew install pango` | — |
-
-**不装也能完成全部流程**：报告页提供三种不依赖 GTK 的导出——
-
-- `导出 Markdown`：纯文本，可直接贴进文档；
-- `下载修订稿` / `整改清单`：同样走 Markdown，适合直接发给对方或打印；
-- `导出 Word`（DOCX）：只依赖 `python-docx`，随 `uv sync` 一起装好，**任何环境都能用**。
-
-PDF 不可用时，后端返回 `503` + 指引文案，前端在报告页顶部显示提示，不产生 500 堆栈。
+> 报告 PDF 导出**优先**走 `weasyprint`（需系统 cairo/pango）。装不上时**自动降级**到
+> `reportlab` + 内置 CID 中文字体（纯 Python wheel、零系统依赖），PDF 照常可导出。
+> `pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
 
 ### 第 2 步：配置环境变量（可选）
 
@@ -141,15 +150,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：203 passed（含安全/并发/路由集成回归测试 + 自动分类 + 导出接口契约测试）
-```
-
-### 第 7 步：验收指标实测（可选）
-
-```bash
-.venv/Scripts/python.exe scripts/acceptance_probe.py
-# 预期：6/6 通过（规则库规模 / 零 Key 端到端 / 评分确定性 / LLM 降级 /
-#       注入防护 / 话术链路收口），明细见 scripts/acceptance_probe_output.json
+# 预期：198 passed（含安全/并发/路由集成回归测试）
 ```
 
 ---
@@ -158,18 +159,14 @@ pytest -q
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
-| POST | `/api/upload` | 上传 PDF/DOCX → `{file_id, has_text_layer, page_count}`；`contract_type` 支持 `rent/labor/intern/auto`（auto = 按正文自动分类） |
-| POST | `/api/analyze` | SSE 流式分析，逐条推送 `progress / risk / done` 事件；`contract_type=auto` 时额外推送 `contract_type_detected` 定型事件 |
+| POST | `/api/upload` | 上传 PDF/DOCX → `{file_id, has_text_layer, page_count}` |
+| POST | `/api/analyze` | SSE 流式分析，逐条推送 `progress / risk / done` 事件 |
 | GET | `/api/document/{file_id}` | 获取条款树（前端原文高亮） |
 | GET | `/api/result/{file_id}` | 获取完整分析结果（含雷达） |
 | POST | `/api/script` | 生成谈判话术 |
-| GET\|POST | `/api/report/{file_id}?format=md|revised|checklist|pdf|docx` | 导出报告：`md` 全文、`revised` 修订稿、`checklist` 整改清单、`docx` Word、`pdf`（需 GTK，缺失时 503 + 指引）。**GET 为浏览器下载的默认行为**（前端按钮即 `<a href>`），POST 保留兼容脚本 |
+| GET\|POST | `/api/report/{file_id}?format=md\|revised\|checklist\|pdf\|docx` | 导出报告（前端 5 个按钮是 `<a href>`，必须支持 GET） |
+| POST | `/api/chat` | 追问对话 Agent（返回 sources 可追溯引用 + trace 工具轨迹） |
 | GET | `/api/health` | 健康检查（显示 LLM 是否启用） |
-
-> **合同类型自动分类**（`contract_type=auto`）：文件名含类型词时以文件名为准；
-> 不含时（如「合同.docx」）按正文特征词加权打分判定（标题型 ×3 / 强特征 ×1，
-> 「甲方/乙方」等通用词刻意不收——那是早期误判的根因）。判定结果经 SSE
-> `contract_type_detected` 事件回传前端明示，不静默兜底。
 
 ---
 
