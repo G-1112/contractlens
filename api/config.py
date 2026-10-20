@@ -53,13 +53,25 @@ class Settings:
     """运行时设置。"""
 
     # ---- LLM ----
-    llm_api_key: str = os.getenv("LLM_API_KEY", "").strip()
+    _llm_api_key: str = os.getenv("LLM_API_KEY", "").strip()
     llm_base_url: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com").strip()
     llm_model: str = os.getenv("LLM_MODEL", "deepseek-chat").strip()
     llm_temperature: float = float(os.getenv("LLM_TEMPERATURE", "0"))
     llm_max_retries: int = int(os.getenv("LLM_MAX_RETRIES", "2"))
     llm_timeout_seconds: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
     llm_concurrency: int = int(os.getenv("LLM_CONCURRENCY", "8"))  # 并发判定上限（性能关键）
+
+    # 公网部署保险丝：置1 后**强制离线**，即便目录里意外带了 .env 也不会用到 Key。
+    # 背景：部署工具压缩整个项目目录上传（只排除 node_modules/.git/构建产物），
+    # .gitignore拦不住 .env——真实 Key 会被一起上传并生效，公网任意用户即可
+    # 触发调用烧额度。公网实例一律不挂 Key，演示走 mock（规则引擎全量生效，
+    # 与 LLM 无关的确定性部分完全一致，且更快）。
+    public_deploy: bool = os.getenv("PUBLIC_DEPLOY", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
 
     # ---- 检索器 ----
     use_vector_db: bool = os.getenv("USE_VECTOR_DB", "false").strip().lower() in {
@@ -89,8 +101,23 @@ class Settings:
     max_clause_chars: int = 2000  # 单条超长条款截断，控制 token 成本
 
     @property
+    def llm_api_key(self) -> str:
+        """公网部署下**始终返回空串**：Key 连读都不允许，杜绝误用。"""
+        if self.public_deploy:
+            return ""
+        return self._llm_api_key
+
+    @llm_api_key.setter
+    def llm_api_key(self, value: str) -> None:
+        # 保留可写性：既有测试与脚本会直接赋值设置 Key。公网模式下写入的值
+        # 依旧读不出来（getter 短路），这里只保证 API 不被破坏。
+        self._llm_api_key = (value or "").strip()
+
+    @property
     def llm_enabled(self) -> bool:
-        """是否启用真实 LLM（有 key 才启用，否则降级为 mock 规则判定）。"""
+        """是否启用真实 LLM（有key 才启用，否则降级为 mock 规则判定）。"""
+        if self.public_deploy:
+            return False
         return bool(self.llm_api_key)
 
     @property
