@@ -66,16 +66,29 @@ def test_truthy_values_recognized(truthy: str, monkeypatch: pytest.MonkeyPatch):
             os.environ["PUBLIC_DEPLOY"] = saved
 
 
-def test_deploy_dir_has_no_env_file():
-    """防回归：真实 .env 不得再出现在可部署目录内。
+def test_env_file_never_committed():
+    """防回归：.env 永不入库。
 
-    部署工具压缩整个目录上传（只排除 node_modules/.git/构建产物），
-    .gitignore 对此无效。Key 已移至<workspace>/.secrets/。
+    注意策略随部署形态变化：
+    - 离线演示（PUBLIC_DEPLOY=1）：Key 放在项目目录外，目录内不应有 .env；
+    - 公网挂 Key（评审需看到真实 LLM 模式）：.env 必须留在项目目录内，
+      部署平台才会把它上传生效——但**代价是它一定会上传**，所以必须保证
+      它被 .gitignore 排除、永不进入版本库。
+
+    因此这里断言的是恒定的不变量：「git 不跟踪 .env」，而不是「.env 不存在」。
     """
-    from pathlib import Path
+    import subprocess
 
     root = Path(__file__).resolve().parents[1]
-    assert not (root / ".env").exists(), (
-        "部署目录内不能有 .env——它会被一并上传到公网沙箱。"
-        "请把 Key 放到部署目录之外，再用环境变量注入。"
+    if not (root / ".env").exists():
+        return  # 当前是离线形态，目录内无 .env，符合预期
+
+    out = subprocess.run(
+        ["git", "check-ignore", "-v", ".env"],
+        cwd=root, capture_output=True, text=True, timeout=30,
     )
+    assert out.returncode == 0, (
+        ".env 存在但未被 .gitignore 排除——Key 会被提交入库。"
+        "请在 .gitignore 中加入 .env。"
+    )
+    assert ".env" in out.stdout
