@@ -30,6 +30,10 @@ router = APIRouter(prefix="/api", tags=["analyze"])
 class AnalyzeRequest(BaseModel):
     file_id: str
     contract_type: str = "rent"
+    # 默认不在分析阶段内联生成谈判话术：真实 LLM 下话术是第二个 LLM 波次
+    # （实测 5 条话术平均 1230ms），内联会让 `done` 事件晚约 1.2s到达。
+    # 前端拿到报告后调 POST /api/script 按需生成。需要旧行为时置 true。
+    inline_scripts: bool = False
 
 
 @router.get("/document/{file_id}")
@@ -95,7 +99,11 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
             async def _run() -> None:
                 try:
                     report = await run_analysis_streaming(
-                        parsed, req.contract_type, req.file_id, _collect
+                        parsed,
+                        req.contract_type,
+                        req.file_id,
+                        _collect,
+                        generate_scripts=req.inline_scripts,
                     )
                     store.put_report(req.file_id, report)
                 except Exception as e:  # noqa: BLE001
