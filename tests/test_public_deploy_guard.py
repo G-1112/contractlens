@@ -78,6 +78,7 @@ def test_env_file_never_committed():
     因此这里断言的是恒定的不变量：「git 不跟踪 .env」，而不是「.env 不存在」。
     """
     import subprocess
+    from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
     if not (root / ".env").exists():
