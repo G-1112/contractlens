@@ -62,8 +62,11 @@ def analyze(cl: httpx.Client, base: str, fid: str, ctype: str, budget_s: int = 1
     for _ in range(budget_s):
         g = cl.get(f"{base}/api/result/{fid}")
         if g.status_code == 200:
-            g.json()["_wait_ms"] = post_ms
-            return g.json()
+            # 注意：必须复用同一个 dict。g.json() 每次调用都会重新解析出一个新
+            # 对象，写入后 return g.json() 会把刚加的键丢掉（初版因此误报 0.0s）。
+            data = g.json()
+            data["_wait_ms"] = post_ms
+            return data
         time.sleep(1)
     raise TimeoutError(f"分析在 {budget_s}s 内未完成")
 
