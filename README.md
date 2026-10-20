@@ -2,7 +2,7 @@
 
 > 上传一份合同，拿到逐条风险标注、通俗解释、修改建议，以及一段可以直接发给对方的谈判话术。
 
-针对**房屋租赁合同 / 劳动合同 / 实习协议**三类合同，做一条**文档处理流水线**（而非聊天框）：
+针对**房屋租赁合同 / 劳动合同 / 实习协议 / 借款合同 / 保证合同**五类合同，做一条**文档处理流水线**（而非聊天框）：
 
 ```
 解析 → 结构化切分 → 规则 + LLM 双引擎判定 → 可视化呈现 → 可交付的修订稿
@@ -25,18 +25,45 @@ contractlens/
 │   ├── routers/         # upload / analyze(SSE) / script / report
 │   ├── parser/          # pdf/docx 解析 + 条款切分（零 LLM 依赖）
 │   ├── engine/          # rule_engine / llm_engine / fusion / retriever / scoring
-│   ├── rules/           # rent.yaml / labor.yaml / intern.yaml（74 条规则）
+│   ├── rules/           # rent/labor/intern/loan/guarantee.yaml（111 条规则）
 │   ├── report/          # 谈判话术 + 报告导出（md/docx/pdf）
 │   └── schemas/         # Pydantic 数据模型
 ├── web/                 # React 前端
 ├── data/
-│   ├── regulations/     # 法规片段（rent/labor/intern.json）
-│   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（收集 176 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
-├── scripts/             # make_sample_docx.py（生成可上传的样本）
+│   ├── regulations/     # 法规片段（5 类 × 25~30 条，合计 140 条）
+│   ├── samples/         # 6 份含风险条款的样本合同（含 1 份提示注入攻击样本）
+│   └── evalset/          # 合成标注集 50 份 + labels.json
+├── tests/               # 单元 + 集成测试（收集 198 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
+├── scripts/             # 样本生成 / 评测 / 验收脚本（见下）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
 ```
+
+---
+
+## 📊 脚本一览（全部可复跑）
+
+| 脚本 | 作用 | 典型用法 |
+|---|---|---|
+| `make_sample_docx.py` / `make_finance_samples.py` | 生成可上传的样本合同（含注入攻击样本） | `python scripts/make_finance_samples.py` |
+| `build_evalset.py` / `evaluate_accuracy.py` | 合成标注集 + 条款级 P/R/F1 | `python scripts/evaluate_accuracy.py` |
+| `evaluate_finance.py` | 金融方向端到端 + 性能基线，**报告头自动自证 mock/真实 LLM 口径** | `python scripts/evaluate_finance.py` |
+| `e2e_smoke.py` | 端到端 HTTP 冒烟（健康/审查/法条/注入/对话） | `python scripts/e2e_smoke.py <base_url>` |
+| `verify_export_online.py` | 线上五格式导出复验（PDF 魔数 + 404 路径） | `python scripts/verify_export_online.py <base_url>` |
+| `scan_anonymity.py` | **匿名评审脱敏闸门**：命中学校/姓名/学号/导师/邮箱即退出码 1 | `python scripts/scan_anonymity.py` |
+
+## ⚖️ 两种运行口径的实测差异（务必按口径引用数字）
+
+同一份 `借款合同样本.docx`，本机实测：
+
+| 口径 | 条款 | 高 | 中 | 低 | 总分 | 分析耗时 |
+|---|---|---|---|---|---|---|
+| mock 离线（无 Key） | 12 | 5 | 3 | 0 | 33 | **34.9 ms** |
+| 真实 LLM（deepseek-chat，并发 8） | 12 | 7 | 2 | 3~4 | 27 | **7.0 ~ 11.0 s** |
+
+差异来源：LLM 覆盖规则未枚举的长尾，额外产出「低」风险；耗时升两个数量级。
+且 `temperature=0` 下真实 LLM 仍有跨次波动（保证合同实测出现「高5中6」与「高6中5」），
+因此**对外引用请写明口径与区间，不要写单点值**。
 
 ---
 
@@ -66,8 +93,9 @@ pip install -e ".[dev]"
 > 用 pip 安装则只会按 `pyproject.toml` 的 `>=` 约束解析，**结果可能不同**。
 > 若只需最小运行集，用 `uv sync`（不带 `--extra dev`）即可。
 >
-> 报告 PDF 导出依赖 `weasyprint`（需系统 cairo/pango）。若安装失败，可跳过，
-> 使用 `md` 格式导出；`pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
+> 报告 PDF 导出**优先**走 `weasyprint`（需系统 cairo/pango）。装不上时**自动降级**到
+> `reportlab` + 内置 CID 中文字体（纯 Python wheel、零系统依赖），PDF 照常可导出。
+> `pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
 
 ### 第 2 步：配置环境变量（可选）
 
@@ -122,7 +150,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：176 passed（含安全/并发/路由集成回归测试）
+# 预期：198 passed（含安全/并发/路由集成回归测试）
 ```
 
 ---
@@ -136,7 +164,8 @@ pytest -q
 | GET | `/api/document/{file_id}` | 获取条款树（前端原文高亮） |
 | GET | `/api/result/{file_id}` | 获取完整分析结果（含雷达） |
 | POST | `/api/script` | 生成谈判话术 |
-| POST | `/api/report/{file_id}?format=md|pdf|docx` | 导出报告 |
+| GET\|POST | `/api/report/{file_id}?format=md\|revised\|checklist\|pdf\|docx` | 导出报告（前端 5 个按钮是 `<a href>`，必须支持 GET） |
+| POST | `/api/chat` | 追问对话 Agent（返回 sources 可追溯引用 + trace 工具轨迹） |
 | GET | `/api/health` | 健康检查（显示 LLM 是否启用） |
 
 ---
