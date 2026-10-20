@@ -48,6 +48,10 @@ IDENTITY_PATTERNS: list[tuple[str, str, str]] = [
 # 允许命中的语境：这些文件本就记录身份，不属于「评审材料」
 ALLOW_CONTEXT = ("scan_anonymity",)
 
+# 本工具生成的报告：它会**逐字引用**命中片段，扫自己必然全中（自指误报），
+# 故排除。它本身不是提交物，且由本脚本生成，内容可由 --write 路径复现。
+GENERATED_ARTIFACTS = {"脱敏扫描报告.md"}
+
 TEXT_SUFFIX = {".md", ".txt", ".ts", ".tsx", ".js", ".jsx", ".json", ".yaml", ".yml", ".py", ".html", ".css"}
 SKIP_DIR = {".git", "node_modules", "dist", "site", ".venv", "__pycache__", ".pytest_cache", "screenshots", "raw"}
 
@@ -105,6 +109,8 @@ def scan(targets: list[tuple[Path, str]]) -> list[tuple[str, str, str, str]]:
     for path, kind in targets:
         rel = path.relative_to(WORKSPACE) if str(path).startswith(str(WORKSPACE)) else path
         if any(a in str(rel) for a in ALLOW_CONTEXT):
+            continue
+        if path.name in GENERATED_ARTIFACTS:
             continue
         if kind == "zip":
             for member, text in _zip_texts(path):
