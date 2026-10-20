@@ -103,10 +103,15 @@ app.include_router(chat.router)
 
 @app.get("/api/health")
 async def health() -> dict:
+    from .ratelimit import llm_budget
+
     return {
         "status": "ok",
         "llm_enabled": settings.llm_enabled,
         "llm_model": settings.llm_model if settings.llm_enabled else "mock",
+        # 公网挂真实 Key 时暴露配额余量，便于监控与现场排查（不含任何 Key 信息）
+        "llm_daily_budget": settings.llm_daily_budget,
+        "llm_budget_remaining": llm_budget.remaining,
     }
 
 

@@ -73,6 +73,11 @@ class Settings:
         "on",
     }
 
+    # LLM 日配额（公网挂真实 Key 时的成本刹车）。0 = 不限（本地开发）。
+    # 与每分钟 IP 限流叠加：反代后 IP 限流实际是全局的，但窗口只有 60s，
+    # 没有这道按天闸门，理论上一天能打到近 3 万次调用。
+    llm_daily_budget: int = int(os.getenv("LLM_DAILY_BUDGET", "0"))
+
     # ---- 检索器 ----
     use_vector_db: bool = os.getenv("USE_VECTOR_DB", "false").strip().lower() in {
         "1",

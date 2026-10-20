@@ -11,7 +11,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 
 from ..engine.chat_engine import ChatAgent
-from ..ratelimit import chat_limiter, client_ip
+from ..ratelimit import chat_limiter, client_ip, llm_budget
 from ..schemas import ChatRequest, ChatResponse
 from ..store import store
 
@@ -29,6 +29,14 @@ async def chat(req: ChatRequest, request: Request) -> ChatResponse:
             status_code=429,
             detail=f"请求过于频繁，请 {chat_limiter.retry_after(ip)} 秒后重试",
             headers={"Retry-After": str(chat_limiter.retry_after(ip))},
+        )
+
+    # LLM 日配额闸门（成本兜底）：与每分钟 IP 限流叠加，日调用量封顶
+    _ok, _remaining = llm_budget.allow()
+    if not _ok:
+        raise HTTPException(
+            status_code=429,
+            detail="今日演示调用额度已用尽，请稍后再试",
         )
 
     question = (req.question or "").strip()
