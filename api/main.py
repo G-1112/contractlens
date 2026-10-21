@@ -8,8 +8,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings, ROOT_DIR
@@ -99,6 +100,36 @@ app.include_router(analyze.router)
 app.include_router(script.router)
 app.include_router(report.router)
 app.include_router(chat.router)
+
+
+# ---------------------------------------------------------------------------
+# 请求校验错误处理器（R-ERR-01）
+# ---------------------------------------------------------------------------
+# 为什么必须自定义：FastAPI 默认处理器用 jsonable_encoder 序列化校验错误，
+# 其中 input 字段对 JSON 端点而言是**原始请求体字节**。客户端一旦把二进制
+# （如整个 DOCX 文件）POST 到 /api/analyze 这类 JSON 端点，bytes.decode()
+# 直接抛 UnicodeDecodeError —— 处理器自身崩溃，返回 500 而非 422，
+# 且堆栈会把整个请求体写进日志。
+# 修复：input 统一替换为长度占位符，既恢复 422 语义，也避免回显原始请求体。
+def _sanitize_validation_errors(errors: list) -> list:
+    safe: list = []
+    for err in errors:
+        err = dict(err)
+        raw = err.get("input")
+        if isinstance(raw, (bytes, bytearray)):
+            err["input"] = f"<binary {len(raw)} bytes>"
+        safe.append(err)
+    return safe
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_handler(
+    request: Request, exc: RequestValidationError
+) -> Response:
+    return JSONResponse(
+        status_code=422,
+        content={"detail": _sanitize_validation_errors(exc.errors())},
+    )
 
 
 @app.get("/api/health")
