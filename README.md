@@ -33,7 +33,7 @@ contractlens/
 │   ├── regulations/     # 法规片段（5 类 × 25~30 条，合计 140 条）
 │   ├── samples/         # 6 份含风险条款的样本合同（含 1 份提示注入攻击样本）
 │   └── evalset/          # 合成标注集 50 份 + labels.json
-├── tests/               # 单元 + 集成测试（收集 220 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
+├── tests/               # 单元 + 集成测试（收集 222 项，覆盖解析/规则/融合/评分/安全/路由/解析复杂度全链路）
 ├── scripts/             # 样本生成 / 评测 / 验收脚本（见下）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
@@ -150,7 +150,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：220 passed（含安全/并发/路由集成回归测试）
+# 预期：222 passed（含安全/并发/路由集成回归测试）
 ```
 
 ---
