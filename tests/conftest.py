@@ -22,3 +22,11 @@ if str(ROOT) not in sys.path:
 os.environ["LLM_API_KEY"] = ""
 os.environ.pop("LLM_BASE_URL", None)
 os.environ.pop("LLM_MODEL", None)
+
+# 同理：测试进程强制关闭评审访问门禁。
+#
+# 公网部署会在 .env 里配置 REVIEW_ACCESS_CODE，若测试进程读到它，所有
+# /api/* 业务端点都会 401，整卷测试失效。门禁行为由
+# tests/test_review_access.py 用 monkeypatch 显式覆盖开启态来验证。
+# _load_env_file 用 os.environ.setdefault，预先置空即可挡住 .env 的值。
+os.environ["REVIEW_ACCESS_CODE"] = ""

@@ -59,3 +59,13 @@ def test_health_exempt_under_gate(client: TestClient, monkeypatch: pytest.Monkey
         assert r.json()["status"] == "ok"
     finally:
         monkeypatch.setattr(get_settings(), "review_access_code", "")
+
+
+def test_health_reports_access_gate_flag(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    """前端据此判断是否先显示口令页，字段必须与配置同步。"""
+    assert client.get("/api/health").json()["access_gate"] is False
+    monkeypatch.setattr(get_settings(), "review_access_code", "t0ps3cret")
+    try:
+        assert client.get("/api/health").json()["access_gate"] is True
+    finally:
+        monkeypatch.setattr(get_settings(), "review_access_code", "")
