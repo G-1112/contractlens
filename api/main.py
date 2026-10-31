@@ -143,6 +143,8 @@ async def health() -> dict:
         # 公网挂真实 Key 时暴露配额余量，便于监控与现场排查（不含任何 Key 信息）
         "llm_daily_budget": settings.llm_daily_budget,
         "llm_budget_remaining": llm_budget.remaining,
+        # 前端据此决定是否先显示口令页（true 时业务端点需 X-Review-Code）
+        "access_gate": bool(get_settings().review_access_code),
     }
 
 
