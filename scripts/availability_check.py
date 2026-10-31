@@ -12,11 +12,16 @@
 用法：
   python scripts/availability_check.py --label T-48h
   python scripts/availability_check.py --label 冒烟 --base http://127.0.0.1:8000
+  # 公网已启用评审口令时（--code 缺省读环境变量 REVIEW_ACCESS_CODE）：
+  REVIEW_ACCESS_CODE=CL-xxxx-xxxx python scripts/availability_check.py --label T-48h
+  python scripts/availability_check.py --label T-48h --code CL-xxxx-xxxx
 
 退出码 0 = 全部通过；1 = 有失败项（提交前必须为 0）。
 """
 
 from __future__ import annotations
+
+import os
 
 import argparse
 import json
@@ -32,10 +37,12 @@ SAMPLES = ROOT / "data" / "samples"
 DEFAULT_BASE = "https://contractlens-agent.app.workbuddy.host"
 
 
-def client() -> httpx.Client:
+def client(code: str = "") -> httpx.Client:
     # 沙箱注入 HTTP_PROXY，httpx 默认 trust_env=True 会走代理导致同连接第2 个
     # 请求起全404 的假故障（曾据此误判上传接口有问题），必须关。
-    return httpx.Client(trust_env=False, timeout=120)
+    # 公网启用 REVIEW_ACCESS_CODE 后，业务端点需带口令头，故支持 code 注入。
+    headers = {"X-Review-Code": code} if code else {}
+    return httpx.Client(trust_env=False, timeout=120, headers=headers)
 
 
 def upload(cl: httpx.Client, base: str, path: Path, ctype: str) -> str:
@@ -76,13 +83,18 @@ def main() -> int:
     ap.add_argument("--base", default=DEFAULT_BASE)
     ap.add_argument("--label", default="未标注", help="本轮标签，如 T-48h / T-24h / T-1h")
     ap.add_argument("--out", type=Path, default=ROOT / "docs" / "可用性验证记录.md")
+    ap.add_argument(
+        "--code",
+        default=os.environ.get("REVIEW_ACCESS_CODE", ""),
+        help="评审访问口令（启用门禁时必填；缺省读环境变量 REVIEW_ACCESS_CODE）",
+    )
     args = ap.parse_args()
 
     base = args.base.rstrip("/")
     rows: list[tuple[str, bool, str]] = []
     ts = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
 
-    with client() as cl:
+    with client(args.code) as cl:
         # 1) 健康检查
         try:
             h = cl.get(f"{base}/api/health", timeout=15).json()
@@ -105,9 +117,15 @@ def main() -> int:
         except Exception as e:  # noqa: BLE001
             rows.append(("前端页面可达", False, f"{type(e).__name__}: {e}"))
 
-        # 3) 门禁状态（探测性：不带口令打一个业务端点看是否 401）
+        # 3) 门禁状态（探测性：**显式清空口令**打一个业务端点看是否 401）
+        #    注意：不能复用带口令的 client——那样探针会拿到 404，把已启用的
+        #    门禁误报成「未启用」（2026-10-31 实测踩到）。
         try:
-            probe = cl.get(f"{base}/api/result/probe", timeout=15)
+            probe = cl.get(
+                f"{base}/api/result/probe",
+                headers={"X-Review-Code": ""},
+                timeout=15,
+            )
             gated = probe.status_code == 401
             rows.append(("评审访问门禁", True,
                          "已启用（无口令返回 401）" if gated else "未启用（口令未配置）"))
