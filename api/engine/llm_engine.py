@@ -72,21 +72,63 @@ _INJECTION_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"无视.{0,8}(指令|指示|要求|前文|上面|前面|之前)"),
     re.compile(r"忽视.{0,8}(指令|指示|要求|前文|上面|前面|之前)"),
     re.compile(r"忘记.{0,8}(上面|前文|前面|之前|之前的内容)"),
-    re.compile(r"ignore\s+(all\s+)?(previous\s+|above\s+|prior\s+|the\s+)?instructions?", re.I),
-    re.compile(r"disregard\s+(all\s+)?(previous\s+|above\s+|prior\s+)", re.I),
-    re.compile(r"risk_?level\s*[:=]\s*[\"']?无"),
+    re.compile(r"ignore\s*(all\s*)?(previous\s*|above\s*|prior\s*|the\s*)?instructions?", re.I),
+    re.compile(r"disregard\s*(all\s*)?(previous\s*|above\s*|prior\s*)", re.I),
+    re.compile(r"risk_?level\s*(改为|改|[:=])\s*[\"']?\s*(无|低)", re.I),
     re.compile(r"全部.{0,6}(设为|填为|标记为|改为)?无风险"),
     re.compile(r"所有.{0,6}条款.{0,6}(无|忽略|忽略风险)"),
     re.compile(r"system\s*[:：]\s*"),
     re.compile(r"assistant\s*[:：]\s*"),
+    # ---- 2026-10-31 按对照实验盲区补强（scripts/injection_ab_test.py）----
+    # 单条状态改写：判定/评级/标记为「无风险 / 低风险」
+    re.compile(r"(判定|评级|标记|判)\s*(为)?\s*(无风险|低风险)"),
+    # 「改为无」「改成无风险」
+    re.compile(r"(改为|改成)\s*无"),
+    # 审查结论伪造
+    re.compile(r"(审查|审核)(结论|结果)\s*[:：]"),
+    re.compile(r"无任何风险"),
+    # 全量降级：所有条款均为低风险 / 合规 / 无需提示
+    re.compile(r"所有.{0,10}(条款|内容).{0,10}(低风险|合规|无需|无风险)"),
+    # 优先级篡改
+    re.compile(r"(优先于|高于).{0,10}(正文|前述|上述)"),
+    # 跳过审查
+    re.compile(r"(跳过|忽略|无视).{0,6}(审查|审核|检查)"),
 ]
+
+# 归一化：零宽字符、全角字符、中文/单字母之间的空格都可能绕过正则。
+_ZW_CHARS = re.compile(r"[\u200b-\u200f\u2060\ufeff]")
+_CJK_GAP = re.compile(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])")
+_LATIN_GAP = re.compile(r"(?<=[A-Za-z])\s+(?=[A-Za-z](?:\s|$))")
+_FULLWIDTH = str.maketrans(
+    {**{chr(0xFF01 + i): chr(0x21 + i) for i in range(94)}, "\u3000": " "}
+)
+
+
+def _normalize_for_scan(text: str) -> str:
+    """为匹配做归一化：去零宽、全角转半角、消除「忽 略 以 上」式拆字。
+
+    注意：只用于匹配，不改动原文（命中片段仅用于提示，不影响条款存储）。
+    """
+    s = _ZW_CHARS.sub("", text or "")
+    s = s.translate(_FULLWIDTH)
+    prev = None
+    while prev != s:
+        prev = s
+        s = _CJK_GAP.sub("", s)
+        s = _LATIN_GAP.sub("", s)
+    return s
 
 
 def detect_injection(text: str) -> list[str]:
-    """返回条款文本中命中的注入特征片段（空列表表示未命中）。"""
+    """返回条款文本中命中的注入特征片段（空列表表示未命中）。
+
+    先归一化再匹配：零宽字符、全角字母、中文字间空格、单字母间空格
+    都能绕过裸正则（2026-10-31 对照实验实测 8/20 → 加固后见实验报告）。
+    """
+    scanned = _normalize_for_scan(text)
     hits: list[str] = []
     for pat in _INJECTION_PATTERNS:
-        m = pat.search(text or "")
+        m = pat.search(scanned)
         if m:
             hits.append(m.group(0))
     return hits
