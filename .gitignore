@@ -41,6 +41,8 @@ web/.build-test/
 .DS_Store
 Thumbs.db
 
-# 本地工具产物
-.workbuddy_*.xml
-.workbuddy_a_junit.xml
+# 真实评测集：20 份公开合同文本需随仓库版本化（离线可复现）
+!data/evalset_real/contracts/*.docx
+
+# 采集中间文件（下载解压/转换暂存）
+_raw/
