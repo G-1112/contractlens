@@ -46,7 +46,7 @@ def scan_text(text: str) -> list[tuple[str, str]]:
         for m in pat.finditer(text):
             hits.append((name, m.group(0)))
     for ent in KNOWN_ENTITIES:
-        if ent in text:
+        if re.search(r"\s*".join(map(re.escape, ent)), text):
             hits.append(("已知主体名", ent))
     return hits
 
@@ -55,9 +55,12 @@ def desensitize_text(text: str) -> tuple[str, list[tuple[str, str]]]:
     hits: list[tuple[str, str]] = []
     out = text
     for ent in KNOWN_ENTITIES:
-        if ent in out:
-            hits.append(("已知主体名", ent))
-            out = out.replace(ent, "【学校名称】")
+        # 允许字符间夹空格：Word 转文本常把「乐清市虹桥职业技术 学校」拆开，
+        # 之前按整串替换会漏掉（2026-11-02 实测残留 1 处）。
+        pat = re.compile(r"\s*".join(map(re.escape, ent)))
+        for m in pat.finditer(out):
+            hits.append(("已知主体名", m.group(0)))
+        out = pat.sub("【学校名称】", out)
     for name, pat, repl in RULES:
         found = pat.findall(out)
         for f in found:
