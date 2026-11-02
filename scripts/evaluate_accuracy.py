@@ -52,6 +52,22 @@ def _safe_div(a: float, b: float) -> float:
 async def run() -> dict:
     labels = json.loads(LABELS.read_text(encoding="utf-8"))
 
+    # 防呆（2026-11-02）：标注未完成的条款 is_risk 为 None，若照常打分，
+    # `if gold_risk` 会把 None 当作「非风险」，把真阳性全算成 FP/FN，
+    # 输出一组看似合理却完全错误的指标。宁可直接拒绝，也不出假数字。
+    pending = [
+        f"{fn} 第{c['index']}条"
+        for fn, meta in labels.items()
+        for c in meta["clauses"]
+        if c.get("is_risk") is None
+    ]
+    if pending:
+        raise SystemExit(
+            f"[x] 标注未完成：还有 {len(pending)} 条 is_risk 为空（示例：{pending[:3]}）。\n"
+            "    先完成标注（data/evalset_real/annotate.html 或 annotate_real.py --interactive），"
+            "再跑本脚本。"
+        )
+
     per_type: dict[str, dict[str, int]] = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0, "level_ok": 0})
     fp_by_source: dict[str, int] = defaultdict(int)
 
