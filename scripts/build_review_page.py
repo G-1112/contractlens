@@ -56,6 +56,12 @@ TEMPLATE = r"""<!DOCTYPE html>
   .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;transition:.2s}
   .toast.show{opacity:1}
   .done{text-align:center;padding:48px 20px}
+  .intro{background:#eef2ff;border:1px solid #c7d2fe;border-radius:14px;padding:16px 18px;margin-bottom:14px}
+  .intro h2{margin:0 0 8px;font-size:16px}
+  .intro p{margin:6px 0;color:#3730a3;font-size:13px;line-height:1.7}
+  .intro ol{margin:8px 0 0 18px;padding:0;color:#3730a3;font-size:13px}
+  .intro li{margin:4px 0}
+  .intro button{margin-top:12px}
 </style>
 </head>
 <body>
@@ -65,8 +71,21 @@ TEMPLATE = r"""<!DOCTYPE html>
   <div class="progress"><i id="pbar"></i></div>
   <span style="font-size:12px;color:#64748b" id="cnt"></span>
 </div></header>
-<div class="wrap"><div id="app"></div>
-<p class="hint">回车 = 同意 AI 判定并下一条 ｜ 1=高 2=中 3=低 4=无 改判 ｜ ←/→ 切换 ｜ 进度自动保存</p></div>
+<div class="wrap">
+  <div class="intro" id="intro">
+    <h2>任务说明（约 15–20 分钟）</h2>
+    <p>这是一份「合同风险等级」标注复核。每屏是一条合同条款，系统给出了一个初步判定与理由。<b>你的任务是判断这个判定对不对。</b></p>
+    <ol>
+      <li><b>回车</b> = 同意该判定，自动进入下一条；</li>
+      <li><b>1 / 2 / 3 / 4</b> = 改判为 高 / 中 / 低 / 无；</li>
+      <li><b>← →</b> 可前后翻看；进度自动保存在本机浏览器，中途关掉不丢；</li>
+      <li>判定口径：<b>高</b>=可能违法或显失公平（如利率超 LPR 四倍、日违约金过高、放弃诉讼权利）；<b>中</b>=明显加重一方责任但未违法（如单方扣划、保证金不退、违约金比例空白）；<b>低</b>=轻微不对等或表述不清；<b>无</b>=常规条款。</li>
+    </ol>
+    <p>全部过完后点「导出」，把 <code>labels_reviewed.json</code> 发回即可。默认只显示需重点确认的风险项，取消勾选可复核全部条款。</p>
+    <button class="ghost" onclick="document.getElementById('intro').style.display='none'">知道了，开始复核</button>
+  </div>
+  <div id="app"></div>
+<p class="hint">回车 = 同意并下一条 ｜ 1=高 2=中 3=低 4=无 改判 ｜ ←/→ 切换 ｜ 进度自动保存</p></div>
 <div class="toast" id="toast"></div>
 <script>
 const DATA = __DATA__;

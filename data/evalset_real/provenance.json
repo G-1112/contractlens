@@ -185,6 +185,74 @@
       "contract_type": "rent",
       "name": "北京市住房租赁合同（示范文本 BF—2023—0603）",
       "issuer": "北京市住房和城乡建设委员会、北京市市场监督管理局"
+    },
+    "real_rent_07.docx": {
+      "source": "用户提供实拍图片（合同材料/，4 张，页码 1-4）",
+      "obtained": "RapidOCR 离线识别，2026-11-02",
+      "license": "用户自备材料，授权用于本项目评测；已脱敏处理",
+      "type": "真实签署件（实拍 OCR）",
+      "contract_type": "rent",
+      "name": "房屋租赁合同（医院，实拍 OCR）",
+      "issuer": "用户提供",
+      "ocr": {
+        "pages": 4,
+        "page_range": "1-4",
+        "lines": 84,
+        "chars": 1652,
+        "engine": "rapidocr_onnxruntime",
+        "min_score": 0.5
+      }
+    },
+    "real_rent_08.docx": {
+      "source": "用户提供实拍图片（合同材料/，2 张，页码 5-6）",
+      "obtained": "RapidOCR 离线识别，2026-11-02",
+      "license": "用户自备材料，授权用于本项目评测；已脱敏处理",
+      "type": "真实签署件（实拍 OCR）",
+      "contract_type": "rent",
+      "name": "厂房租赁合同（企业间，实拍 OCR）",
+      "issuer": "用户提供",
+      "ocr": {
+        "pages": 2,
+        "page_range": "5-6",
+        "lines": 58,
+        "chars": 1228,
+        "engine": "rapidocr_onnxruntime",
+        "min_score": 0.5
+      }
+    },
+    "real_rent_09.docx": {
+      "source": "用户提供实拍图片（合同材料/，2 张，页码 7-8）",
+      "obtained": "RapidOCR 离线识别，2026-11-02",
+      "license": "用户自备材料，授权用于本项目评测；已脱敏处理",
+      "type": "真实签署件（实拍 OCR）",
+      "contract_type": "rent",
+      "name": "厂房租赁合同书（企业与政府，实拍 OCR）",
+      "issuer": "用户提供",
+      "ocr": {
+        "pages": 2,
+        "page_range": "7-8",
+        "lines": 29,
+        "chars": 441,
+        "engine": "rapidocr_onnxruntime",
+        "min_score": 0.5
+      }
+    },
+    "real_rent_10.docx": {
+      "source": "用户提供实拍图片（合同材料/，9 张，页码 9-17）",
+      "obtained": "RapidOCR 离线识别，2026-11-02",
+      "license": "用户自备材料，授权用于本项目评测；已脱敏处理",
+      "type": "真实签署件（实拍 OCR）",
+      "contract_type": "rent",
+      "name": "厂房租赁合同（含租房协议，实拍 OCR）",
+      "issuer": "用户提供",
+      "ocr": {
+        "pages": 9,
+        "page_range": "9-17",
+        "lines": 216,
+        "chars": 5182,
+        "engine": "rapidocr_onnxruntime",
+        "min_score": 0.5
+      }
     }
   }
 }
