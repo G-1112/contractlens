@@ -85,7 +85,9 @@ TEMPLATE = r"""<!DOCTYPE html>
 
 <script>
 const DATA = __DATA__;
-const KEY = "contractlens.annotate.real.v1";
+// v2：2026-11-02 合同文本清洗后重采样，条款索引发生位移；旧键（v1）里的答案
+// 会错位映射到新题，必须换键让旧进度失效（答案按 fn#index 存，索引不可混用）。
+const KEY = "contractlens.annotate.real.v2";
 
 const LEVELS = [["高","1","high"],["中","2","mid"],["低","3","low"],["无","4","none"]];
 const TYPES = ["利率","违约金","担保","隐私","个人信息","还款","缺失","解除","争议","费用","期限","格式条款","免除","其他"];
@@ -128,6 +130,7 @@ function render(){
 
   const it = ITEMS[pos];
   const a = state.answers[keyOf(it)] || {level: null, type: "其他", note: ""};
+  const isHeading = /^[一二三四五六七八九十]+、|^第[一二三四五六七八九十]+条\s*[^。，,；;]{0,12}$/.test(it.text.trim()) && it.text.trim().length <= 16;
 
   app.innerHTML = `
     <div class="card">
@@ -136,6 +139,7 @@ function render(){
         <span class="tag">${it.type}</span>
         <span class="tag">第 ${pos+1} / ${total} 题</span>
         <span class="tag">文件内序号 ${it.index+1}/${DATA[it.fn].clause_count}</span>
+        ${isHeading ? '<span class="tag" style="background:#fef3c7;border-color:#fde68a;color:#92400e">结构项（章节标题，通常无风险）</span>' : ''}
       </div>
       <div class="text">${escapeHtml(it.text)}</div>
       <div class="btns">
