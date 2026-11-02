@@ -51,6 +51,8 @@ async def main() -> int:
     ap.add_argument("--per-contract", type=int, default=5, help="每份合同未命中条款随机抽样数")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--out", type=Path, default=LABELS)
+    ap.add_argument("--only-new", action="store_true",
+                    help="增量模式：保留 labels.json 中已有合同（含已标注内容），只为新合同抽样")
     args = ap.parse_args()
 
     if os.environ.get("LLM_API_KEY"):
@@ -63,9 +65,15 @@ async def main() -> int:
         return 1
 
     labels: dict[str, dict] = {}
+    if args.only_new and args.out.exists():
+        labels = json.loads(args.out.read_text(encoding="utf-8"))
+        print(f"[i] 增量模式：已有 {len(labels)} 份标注，仅处理新合同")
+
     totals = dict(all_clauses=0, flagged=0, sampled=0)
 
     for f in files:
+        if args.only_new and f.name in labels:
+            continue
         ctype = ctype_of(f.name)
         parsed = parse_file(str(f), f.name, ctype)
         n = len(parsed.clauses)

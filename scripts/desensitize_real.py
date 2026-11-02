@@ -13,6 +13,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from datetime import datetime
 from pathlib import Path
@@ -31,13 +32,34 @@ KNOWN_ENTITIES = [
 ]
 
 RULES: list[tuple[str, re.Pattern[str], str]] = [
+    ("统一社会信用代码", re.compile(r"(?<![0-9A-Z])[0-9A-HJ-NPQRTUWXY]{18}(?![0-9A-Z])"), "【统一社会信用代码】"),
     ("身份证号", re.compile(r"(?<!\d)\d{17}[\dXx](?!\d)"), "【身份证号】"),
     ("身份证号（15位）", re.compile(r"(?<!\d)\d{15}(?!\d)"), "【身份证号】"),
     ("手机号", re.compile(r"(?<!\d)1[3-9]\d{9}(?!\d)"), "【手机号】"),
+    ("括号电话", re.compile(r"\(\d{10,11}\)?"), "【固定电话】"),
     ("固定电话", re.compile(r"(?<!\d)0\d{2,3}[-－]?\d{7,8}(?!\d)"), "【固定电话】"),
     ("银行账号", re.compile(r"(?<!\d)\d{16,19}(?!\d)"), "【银行账号】"),
     ("电子邮箱", re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"), "【电子邮箱】"),
 ]
+
+# 术语表（用户自备材料中的特定单位/人名/地址）
+TERMS_FILE = ROOT / "data" / "evalset_real" / "pii_terms.json"
+
+
+def load_terms() -> dict:
+    """返回完整术语表（含 replacement 映射字典）。
+
+    注意：不要用 isinstance(v, list) 过滤——replacement 是 dict，
+    被滤掉会让占位符退化成 【org】/【person】 这种英文标记。
+    """
+    if not TERMS_FILE.exists():
+        return {}
+    return json.loads(TERMS_FILE.read_text(encoding="utf-8"))
+
+
+def term_pattern(term: str) -> re.Pattern[str]:
+    """允许字符间夹空格（OCR/Word 常把词拆开）。"""
+    return re.compile(r"\s*".join(map(re.escape, term)))
 
 
 def scan_text(text: str) -> list[tuple[str, str]]:
@@ -48,19 +70,40 @@ def scan_text(text: str) -> list[tuple[str, str]]:
     for ent in KNOWN_ENTITIES:
         if re.search(r"\s*".join(map(re.escape, ent)), text):
             hits.append(("已知主体名", ent))
+    for cat, items in load_terms().items():
+        if cat == "replacement" or not isinstance(items, list):
+            continue
+        for term in items:
+            if re.search(term_pattern(term), text):
+                hits.append((f"术语-{cat}", term))
     return hits
 
 
 def desensitize_text(text: str) -> tuple[str, list[tuple[str, str]]]:
     hits: list[tuple[str, str]] = []
     out = text
+
+    # 1) 术语表（单位/人名/地址）——按类别替换为占位符
+    terms = load_terms()
+    repl_map = terms.get("replacement", {})
+    for cat, items in terms.items():
+        if cat == "replacement" or not isinstance(items, list):
+            continue
+        marker = repl_map.get(cat, f"【{cat}】")
+        for term in sorted(items, key=len, reverse=True):  # 长词优先，避免只替一半
+            pat = term_pattern(term)
+            for m in pat.finditer(out):
+                hits.append((f"术语-{cat}", m.group(0)))
+            out = pat.sub(marker, out)
+
+    # 2) 已知主体名兜底
     for ent in KNOWN_ENTITIES:
-        # 允许字符间夹空格：Word 转文本常把「乐清市虹桥职业技术 学校」拆开，
-        # 之前按整串替换会漏掉（2026-11-02 实测残留 1 处）。
         pat = re.compile(r"\s*".join(map(re.escape, ent)))
         for m in pat.finditer(out):
             hits.append(("已知主体名", m.group(0)))
         out = pat.sub("【学校名称】", out)
+
+    # 3) 正则类（证件号/电话/账号/邮箱）
     for name, pat, repl in RULES:
         found = pat.findall(out)
         for f in found:
