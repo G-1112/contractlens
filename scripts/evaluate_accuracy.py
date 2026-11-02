@@ -70,6 +70,8 @@ async def run() -> dict:
 
     per_type: dict[str, dict[str, int]] = defaultdict(lambda: {"tp": 0, "fp": 0, "fn": 0, "level_ok": 0})
     fp_by_source: dict[str, int] = defaultdict(int)
+    total_c = 0   # 实际参与判定的标注条款数
+    tn = 0        # 金标无风险且系统未命中（真负例）
 
     for filename, meta in labels.items():
         ctype = meta["contract_type"]
@@ -97,6 +99,7 @@ async def run() -> dict:
             gold_risk = g["is_risk"]
             got = pred.get(i)
             pred_risk = got is not None and got[0] != "无"
+            total_c += 1
 
             if gold_risk and pred_risk:
                 per_type[ctype]["tp"] += 1
@@ -108,12 +111,27 @@ async def run() -> dict:
                     fp_by_source[got[1]] += 1
             elif gold_risk and not pred_risk:
                 per_type[ctype]["fn"] += 1
+            else:
+                tn += 1
 
-    return {"per_type": dict(per_type), "fp_by_source": dict(fp_by_source)}
+    return {
+        "per_type": dict(per_type),
+        "fp_by_source": dict(fp_by_source),
+        "totals": {"annotated": total_c, "tn": tn},
+    }
 
 
 def render(result: dict) -> str:
     per_type = result["per_type"]
+    anno_method = "未声明"
+    try:
+        _lb = json.loads(LABELS.read_text(encoding="utf-8"))
+        for _e in _lb.values():
+            if isinstance(_e.get("annotation"), dict) and _e["annotation"].get("method"):
+                anno_method = _e["annotation"]["method"]
+                break
+    except Exception:  # noqa: BLE001
+        pass
     tot = {"tp": 0, "fp": 0, "fn": 0, "level_ok": 0}
     for v in per_type.values():
         for k in tot:
@@ -125,18 +143,20 @@ def render(result: dict) -> str:
     acc = _safe_div(tot["level_ok"], tot["tp"])
 
     lines = [
-        f"# 条款级准确率实测（{'合成样例集' if IS_SYNTHETIC else '真实合同人工标注集'}）",
+        f"# 条款级准确率实测（{'合成样例集' if IS_SYNTHETIC else '真实合同标注集'}）",
         "",
         (
             "> ⚠️ **数据性质**：测试集为 `scripts/build_evalset.py` 程序合成的样例，"
             "由规则库关键词套用句式模板生成，标注由构造过程确定。"
             "**不代表真实合同分布**，用于规则引擎回归度量，引用时须标注「合成样例」。"
             if IS_SYNTHETIC
-            else "> **数据性质**：真实合同 + 人工逐条标注（来源登记见 data/evalset_real/provenance.json）。"
+            else "> **数据性质**：真实合同 + 逐条标注（来源登记见 data/evalset_real/provenance.json）。"
+            f"标注方式：{anno_method}。"
             "样本量小、来源分布单一，置信区间宽，引用时须同时给出样本量与口径。"
         ),
         f"> 样本：{len(json.loads(LABELS.read_text(encoding='utf-8')))} 份合同，",
-        f"条款总数 {tot['tp'] + tot['fp'] + tot['fn'] + sum(1 for _ in []) } 条（含标注风险 {tot['tp'] + tot['fn']} 条）。",
+        f"标注条款 {result['totals']['annotated']} 条（风险 {tot['tp'] + tot['fn']} 条），"
+        f"其中 TP+FP+FN {tot['tp'] + tot['fp'] + tot['fn']} 条、真负例 {result['totals']['tn']} 条。",
         f"> 运行环境：本机 {_env_desc()}。",
         "",
         "## 总体指标",

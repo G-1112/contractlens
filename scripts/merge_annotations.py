@@ -92,6 +92,20 @@ def main() -> int:
 
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     shutil.copy2(LABELS, LABELS.with_suffix(f".json.bak-{ts}"))
+
+    # 复核页导出会带 reviewed 字段：据此更新标注方式，避免报告里口径失真
+    total_all = sum(len(e["clauses"]) for e in new.values())
+    reviewed = sum(1 for e in new.values() for c in e["clauses"] if c.get("reviewed"))
+    if reviewed:
+        method = (
+            f"AI 预标注（助手）+ 人工复核 {reviewed}/{total_all} 条"
+            if reviewed < total_all
+            else "AI 预标注（助手）+ 人工复核（逐条确认）"
+        )
+        for e in new.values():
+            e["annotation"] = {"method": method, "rubric": "data/evalset_real/ANNOTATION_RUBRIC.md"}
+        print(f"复核覆盖 {reviewed}/{total_all} 条 → 标注方式记为：{method}")
+
     LABELS.write_text(json.dumps(new, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\n已写入 {LABELS}（备份 labels.json.bak-{ts}）")
     print("下一步：python scripts/annotate_real.py --validate")
