@@ -47,6 +47,7 @@ def http_get(url: str, timeout: int = 60) -> bytes:
 
 def html_to_lines(raw: bytes) -> list[str]:
     h = raw.decode("utf-8", errors="ignore")
+    h = re.sub(r"(?is)<title>.*?</title>", "", h)  # 页面标题不是合同内容
     h = re.sub(r"(?is)<(script|style)[^>]*>.*?</\1>", "", h)
     h = re.sub(r"<br\s*/?>", "\n", h, flags=re.I)
     h = re.sub(r"</(p|div|li|h[1-6]|tr|td)>", "\n", h, flags=re.I)
@@ -78,19 +79,90 @@ def docx_to_lines(raw: bytes, tmp: Path) -> list[str]:
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 
-def cut(lines: list[str], start: str, stop: tuple[str, ...] = STOP_WORDS) -> list[str]:
-    """按起始关键词定位正文，遇停止词截断。"""
+def cut(lines: list[str], start: str, stop: tuple[str, ...] = STOP_WORDS,
+        from_last: bool = False) -> list[str]:
+    """按起始关键词定位正文，遇停止词截断。
+
+    from_last=True：取前 80 行内**最后一次**出现的位置——市场监管总局的
+    文本页结构是「标题 → 使用说明 → 特别提示 → 标题 + 甲方」，正文在
+    第二次标题之后，用第一次会把使用说明当成条款。
+    """
     begin = 0
-    for i, ln in enumerate(lines):
-        if start in ln:
-            begin = i
-            break
+    if from_last:
+        for i, ln in enumerate(lines[:80]):
+            if start in ln:
+                begin = i
+    else:
+        for i, ln in enumerate(lines):
+            if start in ln:
+                begin = i
+                break
     end = len(lines)
     for i in range(begin + 1, len(lines)):
         if any(w in lines[i] for w in stop):
             end = i
             break
     return lines[begin:end]
+
+
+# ---------------------------------------------------------------------------
+# 行内清洗（2026-11-02 用户反馈：页面元信息混进了条款文本）
+# ---------------------------------------------------------------------------
+# 典型污染：政府/仲裁委网页把「来源： 作者： 责编： 发布时间： 语音播报：」
+# 和正文塞在同一个段落里，行级过滤无效，必须按片段正则清除。
+_META_INLINE = [
+    r"来源[:：]\s*[^\s　]*",
+    r"信息来源[:：].*?end-->",
+    r"begin-->.*?end-->",
+    r"作者[:：]\s*",
+    r"图片[:：]\s*",
+    r"责编[:：]\s*",
+    r"责任编辑[:：]\s*[^\s　]*",
+    r"编辑[:：]\s*[^\s　]*",
+    r"审核[:：]\s*[^\s　]*",
+    r"发布时间[:：]\s*[\d\-: ]*",
+    r"语音播报[:：]?\s*",
+    r"浏览次数[:：]\s*\d*",
+    r"【字号[:：][^】]*】",
+    r"分享到[:：]?\s*",
+    r"扫一扫.*$",
+    r"打印本页.*$",
+]
+
+# 正文起点特征：出现任一即认为进入合同本体
+_BODY_HINTS = (
+    "甲方", "乙方", "债权人", "债务人", "保证人", "出租人", "承租人",
+    "借款人", "贷款人", "用人单位", "劳动者", "实习单位", "合同编号",
+)
+_ARTICLE_RE = re.compile(r"^第[一二三四五六七八九十1-9][条章]")
+
+
+def sanitize(lines: list[str], trim: bool = True) -> list[str]:
+    """清除行内元信息片段；trim=True 时跳过正文前的标题/空壳行。
+
+    trim 只对网页源（samr/html）开启：网页头部往往夹带导航与标题；
+    PDF / Word 导出本身干净，强行 trim 反而会切掉开头的说明段。
+    """
+    cleaned: list[str] = []
+    for ln in lines:
+        s = ln
+        for pat in _META_INLINE:
+            s = re.sub(pat, "", s, flags=re.I)
+        s = re.sub(r"\s{2,}", " ", s).strip(" ：:，,")
+        if len(s) >= 4:
+            cleaned.append(s)
+
+    if not trim:
+        return cleaned
+
+    for i, ln in enumerate(cleaned):
+        if any(h in ln for h in _BODY_HINTS) or _ARTICLE_RE.match(ln):
+            # 只在正文起点出现在前 8 行时才裁，避免误伤长文档
+            return cleaned[i:] if i <= 8 else cleaned
+    return cleaned
+
+
+
 
 
 # ---------------------------------------------------------------------------
@@ -234,7 +306,7 @@ def main() -> int:
             else:
                 raw = http_get(url)
             if src["kind"] == "samr":
-                body = cut(html_to_lines(raw), src["start"])
+                body = cut(html_to_lines(raw), src["start"], from_last=True)
             elif src["kind"] == "html":
                 body = cut(html_to_lines(raw), src["start"])
             elif src["kind"] == "pdf":
@@ -253,6 +325,8 @@ def main() -> int:
             else:
                 raise ValueError(src["kind"])
 
+            body = sanitize(body, trim=src["kind"] in ("samr", "html"))
+
             # 质量门槛：条款起始符支持「第X条」与「一、」两种（切分器同口径）
             has_article = any(
                 re.match(r"^第[一1]条", ln) or re.match(r"^[一二三四五六七八九十]+、", ln)
@@ -261,7 +335,9 @@ def main() -> int:
             if len(body) < 12 or not has_article:
                 raise RuntimeError(f"抽取异常：{len(body)} 行，含条款起始={has_article}")
             if not args.dry_run:
-                save_docx(body, OUT_DIR / src["file"], src["name"])
+                # 不注入标题：名称属于元信息（provenance.json 已记录），
+                # 写进正文会被切分成「第 0 条」污染评测。
+                save_docx(body, OUT_DIR / src["file"], "")
             prov["contracts"][src["file"]] = {
                 "source": url,
                 "obtained": f"公开网页/附件抓取，{TODAY}",
