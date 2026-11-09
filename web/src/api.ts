@@ -56,6 +56,16 @@ async function ensureOk(res: Response): Promise<void> {
 }
 
 /** 健康检查（门禁放行，用于判断是否需要口令页）。 */
+/**
+ * 下载预置示例合同（评审零门槛体验）。
+ * key 白名单见后端 api/routers/sample.py：loan / loan_injection / rent / labor / intern / guarantee。
+ */
+export async function fetchSample(key: string): Promise<Blob> {
+  const res = await fetch(`${BASE}/sample/${key}`, { headers: authHeaders() });
+  await ensureOk(res);
+  return res.blob();
+}
+
 export async function getHealth(): Promise<{ status: string; access_gate: boolean }> {
   const res = await fetch(`${BASE}/health`);
   if (!res.ok) throw new Error(await res.text());

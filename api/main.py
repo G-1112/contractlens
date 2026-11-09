@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import get_settings, ROOT_DIR
-from .routers import analyze, chat, report, script, upload
+from .routers import analyze, chat, report, sample, script, upload
 
 settings = get_settings()
 
@@ -96,6 +96,7 @@ async def review_access_guard(request: Request, call_next) -> Response:
 
 
 app.include_router(upload.router)
+app.include_router(sample.router)
 app.include_router(analyze.router)
 app.include_router(script.router)
 app.include_router(report.router)
