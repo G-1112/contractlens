@@ -67,7 +67,7 @@ class RuleEngine:
         self._all_rules: list[Rule] = []
 
     # ------------------------------------------------------------------
-    def load(self, contract_type: str) -> "RuleEngine":
+    def load(self, contract_type: str) -> RuleEngine:
         """按合同类型加载规则文件（rent/labor/intern）。"""
         path = self.rules_dir / f"{contract_type}.yaml"
         if not path.exists():

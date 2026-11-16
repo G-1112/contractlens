@@ -11,9 +11,7 @@
 from __future__ import annotations
 
 import time
-from collections import defaultdict
-from collections import deque
-from typing import Deque
+from collections import defaultdict, deque
 
 
 class RateLimiter:
@@ -26,7 +24,7 @@ class RateLimiter:
     def __init__(self, max_calls: int, window_seconds: float = 60.0) -> None:
         self.max_calls = max_calls
         self.window = window_seconds
-        self._hits: dict[str, Deque[float]] = defaultdict(deque)
+        self._hits: dict[str, deque[float]] = defaultdict(deque)
 
     def _sweep(self, now: float) -> None:
         """全量清扫：删除已空/全部滑出窗口的键；仍超限则淘汰最旧的键。"""

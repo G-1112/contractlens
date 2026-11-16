@@ -21,7 +21,6 @@ body XML 构造 Paragraph 对象，单次访问为 O(n)。原实现把它写进�
 
 from __future__ import annotations
 
-import io
 import time
 import zipfile
 

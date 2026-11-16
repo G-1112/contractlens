@@ -37,7 +37,7 @@ os.environ.pop("LLM_BASE_URL", None)
 import yaml  # noqa: E402
 
 from api.config import get_settings  # noqa: E402
-from api.engine.llm_engine import LLMUnavailable, LlmEngine  # noqa: E402
+from api.engine.llm_engine import LlmEngine, LLMUnavailable  # noqa: E402
 from api.pipeline import parse_file, run_analysis  # noqa: E402
 from api.report.generator import generate_talk_scripts  # noqa: E402
 from api.schemas import Clause, DocumentLine, ParsedDocument, RiskItem  # noqa: E402
@@ -266,6 +266,7 @@ def probe_script_channel() -> None:
             "injection_text_in_prompt": inj_leaked,
             "script_for_injection_is_template": inj_is_template,
             "benign_clause_reached_llm": benign_prompted,
+            "benign_script_chars": len(scripts_ok[0]) if scripts_ok else 0,
         }
 
     out = asyncio.run(_run())

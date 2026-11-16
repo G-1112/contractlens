@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from api.pipeline import run_analysis, run_analysis_streaming
 from api.parser import split_clauses
+from api.pipeline import run_analysis, run_analysis_streaming
 from api.schemas import DocumentLine, ParsedDocument
 
 SAMPLES = Path(__file__).resolve().parent.parent / "data" / "samples"

@@ -9,8 +9,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable
 from pathlib import Path
-from typing import AsyncIterator, Callable
 
 from .config import get_settings
 from .engine import FusionEngine, LlmEngine, RegulationRetriever, RuleEngine
@@ -20,7 +20,6 @@ from .report.generator import generate_talk_scripts
 from .schemas import (
     AnalysisReport,
     Clause,
-    DocumentLine,
     LlmJudgement,
     ParsedDocument,
     RiskItem,

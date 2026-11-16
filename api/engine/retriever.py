@@ -60,7 +60,7 @@ class RegulationRetriever:
         self._snippets: dict[str, list[_Snippet]] = {}
 
     # ------------------------------------------------------------------
-    def load(self, contract_type: str) -> "RegulationRetriever":
+    def load(self, contract_type: str) -> RegulationRetriever:
         """加载某合同类型的法规片段（带跨实例缓存）。
 
         法规是静态资源，但每次分析都会新建 retriever 实例；
@@ -109,7 +109,7 @@ class RegulationRetriever:
 
     # ------------------------------------------------------------------
     @staticmethod
-    def _retrieve_tfidf(clause: Clause, snippets: list["_Snippet"], top_k: int) -> list[str]:
+    def _retrieve_tfidf(clause: Clause, snippets: list[_Snippet], top_k: int) -> list[str]:
         """纯 Python bigram TF-IDF 稀疏向量检索（唯一检索路径，零依赖）。"""
         qvec = _bigrams(clause.text)
         scored = [(_cosine(qvec, s.vector), s) for s in snippets]
