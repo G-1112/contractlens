@@ -32,7 +32,7 @@ contractlens/
 ├── data/
 │   ├── regulations/     # 法规片段（rent/labor/intern.json）
 │   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（收集 194 项，覆盖解析/规则/融合/评分/安全/路由/自动分类全链路）
+├── tests/               # 单元 + 集成测试（收集 203 项，覆盖解析/规则/融合/评分/安全/路由/自动分类/导出契约全链路）
 ├── scripts/             # make_sample_docx.py（生成可上传的样本）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
@@ -66,8 +66,27 @@ pip install -e ".[dev]"
 > 用 pip 安装则只会按 `pyproject.toml` 的 `>=` 约束解析，**结果可能不同**。
 > 若只需最小运行集，用 `uv sync`（不带 `--extra dev`）即可。
 >
-> 报告 PDF 导出依赖 `weasyprint`（需系统 cairo/pango）。若安装失败，可跳过，
-> 使用 `md` 格式导出；`pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
+> 报告 PDF 导出依赖 `weasyprint`（需系统 cairo/pango，见下文「可选：PDF 导出」）。
+> 装不上时系统不会报错崩溃：报告页的「导出 Word」与「导出 Markdown」照常可用，
+> 点「导出 PDF」会给出明确指引。`pdfplumber` 用于 PDF 解析，纯文本/文档类流程不依赖它也能跑。
+
+#### 可选：PDF 导出
+
+PDF 由 WeasyPrint 渲染，它需要系统级 GTK/Pango 运行库（Linux: `libpango`；Windows: GTK3 运行时）。
+
+| 平台 | 安装方式 | 说明 |
+|---|---|---|
+| Linux (Debian/Ubuntu) | `apt install libpango-1.0-0 libpangoft2-1.0-0` | 通常已随桌面环境预装 |
+| Windows | 安装 GTK3 Runtime（MSYS2 `mingw-w64-x86_64-gtk3` 或 gvsbuild 发行包），并把 `bin` 加入 `PATH` | 未装时 `import weasyprint` 会抛 `OSError: cannot load library 'libgobject-2.0-0'` |
+| macOS | `brew install pango` | — |
+
+**不装也能完成全部流程**：报告页提供三种不依赖 GTK 的导出——
+
+- `导出 Markdown`：纯文本，可直接贴进文档；
+- `下载修订稿` / `整改清单`：同样走 Markdown，适合直接发给对方或打印；
+- `导出 Word`（DOCX）：只依赖 `python-docx`，随 `uv sync` 一起装好，**任何环境都能用**。
+
+PDF 不可用时，后端返回 `503` + 指引文案，前端在报告页顶部显示提示，不产生 500 堆栈。
 
 ### 第 2 步：配置环境变量（可选）
 
@@ -122,7 +141,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：194 passed（含安全/并发/路由集成回归测试 + 自动分类测试）
+# 预期：203 passed（含安全/并发/路由集成回归测试 + 自动分类 + 导出接口契约测试）
 ```
 
 ### 第 7 步：验收指标实测（可选）
@@ -144,7 +163,7 @@ pytest -q
 | GET | `/api/document/{file_id}` | 获取条款树（前端原文高亮） |
 | GET | `/api/result/{file_id}` | 获取完整分析结果（含雷达） |
 | POST | `/api/script` | 生成谈判话术 |
-| POST | `/api/report/{file_id}?format=md|pdf|docx` | 导出报告 |
+| GET\|POST | `/api/report/{file_id}?format=md|revised|checklist|pdf|docx` | 导出报告：`md` 全文、`revised` 修订稿、`checklist` 整改清单、`docx` Word、`pdf`（需 GTK，缺失时 503 + 指引）。**GET 为浏览器下载的默认行为**（前端按钮即 `<a href>`），POST 保留兼容脚本 |
 | GET | `/api/health` | 健康检查（显示 LLM 是否启用） |
 
 > **合同类型自动分类**（`contract_type=auto`）：文件名含类型词时以文件名为准；
