@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from api.pipeline import run_analysis
+from api.pipeline import run_analysis, run_analysis_streaming
 from api.parser import split_clauses
 from api.schemas import DocumentLine, ParsedDocument
 
@@ -69,3 +69,55 @@ def test_radar_dimensions_present(name: str, ctype: str):
     report = _run(parsed)
     assert len(report.radar_dimensions) == 5
     assert set(report.radar.keys()) == set(report.radar_dimensions)
+
+
+def test_clause_overflow_truncated(monkeypatch):
+    """条款超限：按文档顺序只分析前 N 条，SSE 提示截断，report 带 truncated 标志。"""
+    from api.config import get_settings
+    from api.schemas import Clause
+
+    monkeypatch.setattr(get_settings(), "analyze_max_clauses", 5, raising=False)
+
+    clauses = [
+        Clause(id=f"c-{i:03d}", text=f"第{chr(0x4E00 + i)}条 甲方应按时支付租金。", page=1)
+        for i in range(20)
+    ]
+    parsed = ParsedDocument(
+        lines=[DocumentLine(text=c.text, page=1) for c in clauses],
+        clauses=clauses,
+        page_count=1,
+        contract_type="rent",
+        has_text_layer=True,
+    )
+
+    events: list[dict] = []
+    report = asyncio.run(
+        run_analysis_streaming(parsed, "rent", "test-truncate", events.append)
+    )
+
+    assert report.truncated is True
+    assert report.clause_count == 5
+    # 判定进度总量应为截断后的 5 条
+    judge_events = [e for e in events if e["type"] == "progress" and e["stage"] == "judge"]
+    assert judge_events and judge_events[0]["total"] == 5
+    # 截断提示事件
+    assert any(
+        e["type"] == "progress" and "条款超限，已截断为前 5 条" in e.get("message", "")
+        for e in events
+    )
+    # 风险条目只可能来自前 5 条（缺失检测为文档级，clause_id 以 missing- 开头）
+    assert all(
+        it.clause_id in {c.id for c in clauses[:5]} or it.clause_id.startswith("missing-")
+        for it in report.items
+    )
+
+
+def test_clause_under_limit_not_truncated():
+    """未超限时不截断、无提示、truncated=False。"""
+    events: list[dict] = []
+    parsed = _load("房屋租赁合同样本.txt", "rent")
+    report = asyncio.run(
+        run_analysis_streaming(parsed, "rent", "test-no-truncate", events.append)
+    )
+    assert report.truncated is False
+    assert not any("截断" in e.get("message", "") for e in events)

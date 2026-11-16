@@ -42,6 +42,8 @@ export interface AnalysisReport {
   items: RiskItem[];
   talk_scripts: string[];
   clause_count: number;
+  /** 条款超限只分析前 N 条（ANALYZE_MAX_CLAUSES） */
+  truncated?: boolean;
   /** 任一条款疑似 Prompt 注入（后端安全创新点 R-INJ-01） */
   injection_flagged?: boolean;
   risk_counts: Record<string, number>;
@@ -70,6 +72,8 @@ export interface ProgressEvent {
   stage: "parse" | "rule" | "judge" | "score";
   current: number;
   total: number;
+  /** 附加提示（如「条款超限，已截断为前 N 条」） */
+  message?: string;
 }
 /** 第十三轮自动分类：仅当请求 contract_type=auto 时推送，告知前端定型结果 */
 export interface ContractTypeDetectedEvent {

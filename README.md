@@ -11,7 +11,7 @@
 - 后端：Python 3.11+ / FastAPI / pdfplumber / python-docx / Pydantic / PyYAML
 - 前端：React 18 / TypeScript / Vite / TailwindCSS / Zustand / ECharts
 - 判定：规则引擎（确定性） + LLM（语义）双引擎融合，LLM 失败自动降级为纯规则
-- 检索：法规片段 RAG（默认纯 Python 字符级 TF-IDF，可选 ChromaDB + bge-small-zh）
+- 检索：法规片段轻量 RAG（纯 Python 字符级 bigram TF-IDF 稀疏向量，零模型下载、离线可复现）
 
 ---
 
@@ -25,14 +25,14 @@ contractlens/
 │   ├── routers/         # upload / analyze(SSE) / script / report
 │   ├── parser/          # pdf/docx 解析 + 条款切分（零 LLM 依赖）
 │   ├── engine/          # rule_engine / llm_engine / fusion / retriever / scoring
-│   ├── rules/           # rent.yaml / labor.yaml / intern.yaml（74 条规则）
+│   ├── rules/           # rent.yaml / labor.yaml / intern.yaml（82 条规则）
 │   ├── report/          # 谈判话术 + 报告导出（md/docx/pdf）
 │   └── schemas/         # Pydantic 数据模型
 ├── web/                 # React 前端
 ├── data/
 │   ├── regulations/     # 法规片段（rent/labor/intern.json）
 │   └── samples/         # 3 份含风险条款的样本合同
-├── tests/               # 单元 + 集成测试（收集 193 项，覆盖解析/规则/融合/评分/安全/路由/自动分类全链路）
+├── tests/               # 单元 + 集成测试（收集 194 项，覆盖解析/规则/融合/评分/安全/路由/自动分类全链路）
 ├── scripts/             # make_sample_docx.py（生成可上传的样本）
 ├── docs/                # prompt-log / iteration / RETRO / 技术文档 / 安全设计
 └── pyproject.toml
@@ -122,7 +122,7 @@ cd web && npm audit --registry=https://registry.npmjs.org
 
 ```bash
 pytest -q
-# 预期：193 passed（含安全/并发/路由集成回归测试 + 自动分类测试）
+# 预期：194 passed（含安全/并发/路由集成回归测试 + 自动分类测试）
 ```
 
 ### 第 7 步：验收指标实测（可选）

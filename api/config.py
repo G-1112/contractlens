@@ -30,13 +30,8 @@ class Settings:
     llm_concurrency: int = int(os.getenv("LLM_CONCURRENCY", "8"))  # 并发判定上限（性能关键）
 
     # ---- 检索器 ----
-    use_vector_db: bool = os.getenv("USE_VECTOR_DB", "false").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
-    embedding_model: str = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-zh-v1.5")
+    # 法规检索固定使用纯 Python bigram TF-IDF 稀疏向量（零依赖、离线、确定性），
+    # 不引入外部向量库，避免"假开关"与模型下载破坏 10 分钟复现。
 
     # ---- 服务 ----
     host: str = os.getenv("HOST", "127.0.0.1")
@@ -48,6 +43,7 @@ class Settings:
     max_pages: int = 30  # 单份合同页数上限
     rag_top_k: int = 3  # 每条款检索法规片段数
     max_clause_chars: int = 2000  # 单条超长条款截断，控制 token 成本
+    analyze_max_clauses: int = int(os.getenv("ANALYZE_MAX_CLAUSES", "200"))  # 条款总量上限，超限只分析前 N 条
 
     @property
     def llm_enabled(self) -> bool:

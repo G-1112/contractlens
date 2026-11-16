@@ -163,10 +163,24 @@ async def run_analysis_streaming(
     clauses = parsed.clauses
     total = len(clauses)
 
+    # 条款总量上限（ANALYZE_MAX_CLAUSES，默认 200）：超限按文档顺序只分析前 N 条，
+    # 控制逐条 LLM 判定的总成本；截断事实经 SSE progress 提示与 report.truncated 透出。
+    truncated = total > settings.analyze_max_clauses
+    if truncated:
+        clauses = clauses[: settings.analyze_max_clauses]
+
     emit = emit or (lambda _e: None)
 
     # 1) 规则引擎（确定性，先跑，作为兜底）
-    emit({"type": "progress", "stage": "rule", "current": 0, "total": total})
+    emit(
+        {
+            "type": "progress",
+            "stage": "rule",
+            "current": 0,
+            "total": len(clauses),
+            **({"message": f"条款超限，已截断为前 {len(clauses)} 条"} if truncated else {}),
+        }
+    )
     rule_hits = _run_rule_engine(clauses, contract_type)
     rule_by_clause: dict[str, list[RuleHit]] = {}
     for h in rule_hits:
@@ -182,13 +196,13 @@ async def run_analysis_streaming(
     reg_refs: dict[str, list[str]] = {}
 
     sem = asyncio.Semaphore(max(1, settings.llm_concurrency))
-    progress = _JudgeProgress(total, emit)
+    progress = _JudgeProgress(len(clauses), emit)
 
     async def _judge_one(clause: Clause) -> LlmJudgement | None:
         async with sem:
             # 第十二轮修复（实证 P1）：
-            # ① RAG 检索原本在 try 之外 —— 检索器异常（如 USE_VECTOR_DB=true 时
-            #    的递归崩溃）会直接击穿 gather，整份合同分析失败；
+            # ① RAG 检索原本在 try 之外 —— 检索器异常（如法规库文件损坏）
+            #    会直接击穿 gather，整份合同分析失败；
             # ② LLM 失败时原本返回 risk_level="无" 的空 judgement —— 但 fusion 的
             #    rule_only 分支要求 llm is None，空 judgement 让所有规则命中条目
             #    被打成 rule_override + 误导性文案「规则引擎判定为更高风险」
@@ -221,9 +235,11 @@ async def run_analysis_streaming(
             emit({"type": "risk", "data": it.model_dump()})
 
     # 4) 评分 + 话术
-    emit({"type": "progress", "stage": "score", "current": total, "total": total})
+    emit({"type": "progress", "stage": "score", "current": len(clauses), "total": len(clauses)})
     scripts = await generate_talk_scripts(items, llm)
-    report = score_report(file_id, contract_type, items, scripts, clause_count=total)
+    report = score_report(
+        file_id, contract_type, items, scripts, clause_count=len(clauses), truncated=truncated
+    )
 
     emit({"type": "done", "report": report.model_dump()})
     return report

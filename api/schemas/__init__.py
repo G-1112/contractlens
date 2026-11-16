@@ -114,6 +114,7 @@ class AnalysisReport(BaseModel):
     talk_scripts: list[str] = Field(default_factory=list)
     injection_flagged: bool = False  # 任一条款疑似 Prompt 注入（安全创新点 R-INJ-01）
     clause_count: int = 0
+    truncated: bool = False  # 条款超限只分析前 N 条时置真（ANALYZE_MAX_CLAUSES）
     risk_counts: dict[str, int] = Field(
         default_factory=lambda: {"高": 0, "中": 0, "低": 0, "无": 0}
     )

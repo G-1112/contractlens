@@ -93,6 +93,7 @@ def score_report(
     items: list[RiskItem],
     talk_scripts: list[str],
     clause_count: int,
+    truncated: bool = False,
 ) -> AnalysisReport:
     """由风险条目计算总分 / 等级 / 雷达。"""
     dims = _DIMENSIONS.get(contract_type, _DIMENSIONS["rent"])
@@ -134,5 +135,6 @@ def score_report(
         talk_scripts=talk_scripts,
         injection_flagged=injection_flagged,
         clause_count=clause_count,
+        truncated=truncated,
         risk_counts=risk_counts,
     )

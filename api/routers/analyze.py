@@ -80,6 +80,7 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
         raise HTTPException(status_code=409, detail="该文件正在分析中，请勿重复提交")
 
     async def event_stream() -> AsyncIterator[str]:
+        task: asyncio.Task | None = None
         try:
             yield _sse({"type": "progress", "stage": "parse", "current": 0, "total": 0})
             # 第十二轮修复（实证 P2）：pdfplumber/python-docx 解析是重 CPU 同步操作，
@@ -155,6 +156,11 @@ async def analyze(req: AnalyzeRequest, request: Request) -> StreamingResponse:
                 }
             )
         finally:
+            # 孤儿任务治理：客户端断开（SSE 生成器被关闭）时 _run 仍在后台
+            # 逐条烧 LLM 配额 —— 必须取消。CancelledError 属 BaseException，
+            # 不会被 _run 内部的 except Exception 吞掉，可干净终止。
+            if task is not None and not task.done():
+                task.cancel()
             # 释放在途占位 + 分析完成即删，不落盘持久化（NFR-05）
             store.end_analysis(req.file_id)
             store.remove_upload(req.file_id)

@@ -93,7 +93,7 @@ export default function AnalyzePage() {
       <div className="mb-6 rounded-xl bg-white p-5 shadow-sm">
         <div className="mb-2 flex items-center justify-between text-sm">
           <span className="text-slate-600">
-            {STAGE_LABEL[progress?.stage ?? "parse"] ?? "处理中…"}
+            {progress?.message ?? STAGE_LABEL[progress?.stage ?? "parse"] ?? "处理中…"}
           </span>
           <span className="font-medium text-brand-600">
             {progress?.stage === "judge" ? `${current}/${total} 条` : `${pct}%`}

@@ -5,29 +5,29 @@
       "id": "A1",
       "name": "规则库规模与分布",
       "pass": true,
-      "total": 74,
+      "total": 82,
       "per_type": {
         "intern": {
-          "count": 24,
+          "count": 27,
           "by_detect": {
-            "keyword": 10,
-            "missing": 12,
+            "keyword": 12,
+            "missing": 13,
             "threshold": 2
           }
         },
         "labor": {
-          "count": 24,
+          "count": 27,
           "by_detect": {
             "threshold": 3,
-            "keyword": 9,
+            "keyword": 12,
             "missing": 12
           }
         },
         "rent": {
-          "count": 26,
+          "count": 28,
           "by_detect": {
             "threshold": 3,
-            "keyword": 11,
+            "keyword": 13,
             "missing": 12
           }
         }
@@ -60,7 +60,7 @@
           "隐私": 100.0
         },
         "talk_scripts": 5,
-        "elapsed_ms": 19.6
+        "elapsed_ms": 80.4
       },
       "劳动合同样本.docx": {
         "clauses": 14,
@@ -84,21 +84,21 @@
           "违约金": 80.0
         },
         "talk_scripts": 5,
-        "elapsed_ms": 26.8
+        "elapsed_ms": 59.6
       },
       "实习协议样本.docx": {
         "clauses": 11,
         "lines": 21,
         "page_count": 1,
         "has_text_layer": true,
-        "rule_hit_items": 10,
-        "risk_items": 10,
+        "rule_hit_items": 11,
+        "risk_items": 11,
         "fusion_sources": {
           "rule_override": 3,
           "both": 2,
-          "rule_only": 5
+          "rule_only": 6
         },
-        "total_score": 14,
+        "total_score": 12,
         "overall_level": "高",
         "radar": {
           "报酬": 78.0,
@@ -108,7 +108,7 @@
           "违约金": 92.0
         },
         "talk_scripts": 5,
-        "elapsed_ms": 18.1
+        "elapsed_ms": 60.8
       }
     },
     {
@@ -131,7 +131,7 @@
         "rule_only": 7
       },
       "all_rule_only": true,
-      "elapsed_ms": 16.2
+      "elapsed_ms": 52.7
     },
     {
       "id": "A5",

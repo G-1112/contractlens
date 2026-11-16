@@ -3,6 +3,7 @@ import { useStore } from "../store/useStore";
 import ScoreGauge from "../components/ScoreGauge";
 import RadarChart from "../components/RadarChart";
 import ClauseViewer from "../components/ClauseViewer";
+import PdfPane from "../components/PdfPane";
 import RiskCard from "../components/RiskCard";
 import TalkScript from "../components/TalkScript";
 import CopyButton from "../components/CopyButton";
@@ -14,10 +15,12 @@ type LevelFilter = "全部" | "高" | "中" | "低";
 const LEVELS: LevelFilter[] = ["全部", "高", "中", "低"];
 
 export default function ReportPage() {
-  const { report, document, fileId, reset } = useStore();
+  const { report, document, fileId, filename, pdfData, reset } = useStore();
   // 交互增强：风险等级筛选 + 关键词搜索（条款多时快速定位）
   const [level, setLevel] = useState<LevelFilter>("全部");
   const [keyword, setKeyword] = useState("");
+  // FR-08：PDF 用画布渲染 + bbox 高亮；DOCX / 无本地 PDF 副本时回退文本视图
+  const isPdf = filename.toLowerCase().endsWith(".pdf");
 
   const filtered = useMemo(() => {
     const list = report?.items ?? [];
@@ -86,6 +89,13 @@ export default function ReportPage() {
         </div>
       </div>
 
+      {/* 条款超限提示（ANALYZE_MAX_CLAUSES 截断） */}
+      {report.truncated && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+          条款较多，已截断为前 {report.clause_count} 条逐条分析，其余条款未纳入本次判定。
+        </div>
+      )}
+
       {/* 注入检测横幅（安全创新点 R-INJ-01） */}
       {report.injection_flagged && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
@@ -140,7 +150,11 @@ export default function ReportPage() {
           <h3 className="mb-2 text-sm font-semibold text-slate-700">
             原文高亮（点击定位）
           </h3>
-          {document && <ClauseViewer clauses={document.clauses} items={items} />}
+          {document && isPdf && pdfData ? (
+            <PdfPane clauses={document.clauses} items={items} data={pdfData} />
+          ) : (
+            document && <ClauseViewer clauses={document.clauses} items={items} />
+          )}
         </div>
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">

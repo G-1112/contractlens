@@ -3,7 +3,6 @@
 覆盖本轮实证并修复的问题：
   P1-1  阈值规则把条款序号（第N条）当业务数值 → 押金类规则大面积误报
   P1-2  LLM 失败时 rule_only 是死代码（规则命中被误标 rule_override + 误导文案）
-  P1-3  USE_VECTOR_DB=true 时检索无限递归
   P2-4  超页数上传的临时文件泄漏
   P2-5  话术生成未复用注入防护
   P2-7  限流器字典无界增长
@@ -83,29 +82,6 @@ def test_fusion_rule_override_only_when_llm_judged_lower():
     items = FusionEngine().fuse(clauses, hits, [j])
     assert items[0].source == "rule_override"
     assert items[0].needs_review
-
-
-# ----------------------------------------------------------------------
-# P1-3：USE_VECTOR_DB=true 不再无限递归
-# ----------------------------------------------------------------------
-
-
-def test_vector_db_mode_no_infinite_recursion(monkeypatch):
-    """chromadb 可导入时（此处注入假模块），USE_VECTOR_DB=true 曾直接
-    RecursionError；修复后应退化为 TF-IDF 检索并正常返回。"""
-    import sys
-    import types
-
-    from api.config import get_settings
-    from api.engine.retriever import RegulationRetriever
-
-    monkeypatch.setitem(sys.modules, "chromadb", types.ModuleType("chromadb"))
-    settings = get_settings()
-    monkeypatch.setattr(settings, "use_vector_db", True, raising=False)
-
-    r = RegulationRetriever()
-    refs = r.retrieve_for(_clause("押金为三个月租金"), "rent", top_k=2)
-    assert isinstance(refs, list)  # 不递归即成功（内容取决于法规库，可为空）
 
 
 # ----------------------------------------------------------------------

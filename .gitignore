@@ -40,3 +40,7 @@ web/.build-test/
 # 系统
 .DS_Store
 Thumbs.db
+
+# 本地工具产物
+.workbuddy_*.xml
+.workbuddy_a_junit.xml

@@ -12,7 +12,7 @@ const CONTRACT_TYPES: { value: ContractTypeInput; label: string; desc: string }[
 ];
 
 export default function UploadPage() {
-  const { contractType, setFile, setUploadInfo, setStage, setError, reset } =
+  const { contractType, setFile, setUploadInfo, setStage, setError, setPdfData, reset } =
     useStore();
   const [file, setFileState] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -33,6 +33,10 @@ export default function UploadPage() {
       const res = await uploadFile(file, contractType);
       setFile(res.file_id, res.contract_type, res.filename);
       setUploadInfo({ page_count: res.page_count, has_text_layer: res.has_text_layer });
+      // PDF 留一份本地字节给报告页的画布渲染（服务端分析完即删，不落盘）
+      setPdfData(
+        file.name.toLowerCase().endsWith(".pdf") ? await file.arrayBuffer() : null,
+      );
 
       // 无文本层（通常是扫描件/图片版 PDF）：不要进入分析，否则必然失败。
       if (!res.has_text_layer) {
@@ -157,7 +161,7 @@ export default function UploadPage() {
       {/* 功能亮点 */}
       <div className="mt-8 grid grid-cols-3 gap-3 text-center text-sm">
         {[
-          ["规则引擎", "80 条规则库确定性判定"],
+          ["规则引擎", "82 条规则库确定性判定"],
           ["AI 语义判定", "大模型逐条解读大白话"],
           ["谈判话术", "一键生成可直接发送的话术"],
         ].map(([t, d]) => (

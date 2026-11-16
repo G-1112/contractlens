@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import math
 import uuid
 from pathlib import Path
 
@@ -56,6 +57,22 @@ async def stream_read_limited(file: UploadFile, max_bytes: int) -> bytes:
     return b"".join(chunks)
 
 
+def _estimate_docx_pages(path: Path) -> int:
+    """DOCX 没有固定分页概念，按字符数估算页数（约 1800 字符/页，向上取整）。
+
+    让 30 页上限对 DOCX 同样生效；含表格时把单元格文本一并计入。
+    """
+    from docx import Document
+
+    doc = Document(str(path))
+    chars = sum(len(p.text) for p in doc.paragraphs)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                chars += len(cell.text)
+    return max(1, math.ceil(chars / 1800))
+
+
 def _probe(path: Path, suffix: str) -> tuple[bool, int]:
     """轻量探测：返回 (has_text_layer, page_count)。"""
     if suffix == ".pdf":
@@ -71,7 +88,11 @@ def _probe(path: Path, suffix: str) -> tuple[bool, int]:
             return has_text, page_count
         except Exception:  # noqa: BLE001
             return True, 1
-    return True, 1  # DOCX 始终有文本层
+    # DOCX 始终有文本层；页数按字符数估算（.doc 老格式解析失败时回退为 1 页）
+    try:
+        return True, _estimate_docx_pages(path)
+    except Exception:  # noqa: BLE001
+        return True, 1
 
 
 @router.post("/upload", response_model=UploadResult)

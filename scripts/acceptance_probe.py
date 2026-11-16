@@ -70,7 +70,7 @@ def probe_rules() -> None:
             kinds[r["detect"]] = kinds.get(r["detect"], 0) + 1
         per_type[f.stem] = {"count": len(rules), "by_detect": kinds}
         total += len(rules)
-    record("A1", "规则库规模与分布", total == 74 and len(per_type) == 3,
+    record("A1", "规则库规模与分布", total == 82 and len(per_type) == 3,
            {"total": total, "per_type": per_type})
 
 
