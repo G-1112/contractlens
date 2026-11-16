@@ -121,6 +121,15 @@ def _template_script(item: RiskItem) -> str:
     return _TALK_TEMPLATE.format(ref=ref, clause=clause, suggest=suggest, rewrite=rewrite)
 
 
+class PdfRenderUnavailable(RuntimeError):
+    """当前环境缺少 PDF 渲染依赖（WeasyPrint 及其 GTK/Pango 运行库）。
+
+    作为领域异常向上抛：路由层据此返回 503 + 可操作指引，而不是 500 堆栈。
+    WeasyPrint 在缺少 libgobject/libpango 时 import 阶段就抛 OSError（Windows 常见），
+    因此不能只在函数体内 try/except，必须在导入处收口。
+    """
+
+
 class ReportGenerator:
     """生成可交付的报告文件（md / html / docx / pdf）。"""
 
@@ -307,7 +316,14 @@ class ReportGenerator:
         安全（R-SSRF-01）：显式传入受限 url_fetcher，仅允许内联 data: 资源，
         阻断 file:// 与 http(s):// 抓取，避免模板后续改动引入 SSRF 或本地文件读取。
         """
-        from weasyprint import HTML  # 延迟导入
+        try:
+            from weasyprint import HTML  # 延迟导入
+        except (ImportError, OSError) as exc:  # 未安装 / 缺 GTK-Pango 运行库
+            raise PdfRenderUnavailable(
+                "当前环境缺少 PDF 渲染依赖（WeasyPrint 需要 GTK/Pango）。"
+                "请改用「导出 Markdown」或「下载 DOCX」；"
+                "如需 PDF，请按 README「可选：PDF 导出」安装 GTK3 运行时后重试。"
+            ) from exc
 
         html = self.to_html()
         out = Path(out)

@@ -7,7 +7,7 @@ import PdfPane from "../components/PdfPane";
 import RiskCard from "../components/RiskCard";
 import TalkScript from "../components/TalkScript";
 import CopyButton from "../components/CopyButton";
-import { reportDownloadUrl } from "../api";
+import { reportDownloadUrl, downloadReport, type ReportFormat } from "../api";
 import { buildRewriteDigest } from "../utils/clipboard";
 
 type LevelFilter = "全部" | "高" | "中" | "低";
@@ -19,6 +19,9 @@ export default function ReportPage() {
   // 交互增强：风险等级筛选 + 关键词搜索（条款多时快速定位）
   const [level, setLevel] = useState<LevelFilter>("全部");
   const [keyword, setKeyword] = useState("");
+  // 导出状态：PDF/DOCX 走后端渲染，失败时把后端 detail 显示在报告页顶部
+  const [exportErr, setExportErr] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<ReportFormat | null>(null);
   // FR-08：PDF 用画布渲染 + bbox 高亮；DOCX / 无本地 PDF 副本时回退文本视图
   const isPdf = filename.toLowerCase().endsWith(".pdf");
 
@@ -38,6 +41,28 @@ export default function ReportPage() {
   if (!report || !fileId) return null;
 
   const items = report.items;
+  const fid = fileId;
+
+  /** PDF / DOCX 走后端渲染：用 fetch 拿 Blob，失败时展示后端 detail（如缺 GTK 的指引）。 */
+  async function handleExport(format: ReportFormat, name: string) {
+    setExportErr(null);
+    setExporting(format);
+    try {
+      const blob = await downloadReport(fid, format);
+      const url = URL.createObjectURL(blob);
+      const a = window.document.createElement("a");
+      a.href = url;
+      a.download = name;
+      window.document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setExportErr(e instanceof Error ? e.message : "导出失败，请重试");
+    } finally {
+      setExporting(null);
+    }
+  }
   const dims = report.radar_dimensions;
   const values = dims.map((d) => report.radar[d] ?? 100);
 
@@ -59,7 +84,7 @@ export default function ReportPage() {
             ← 重新上传
           </button>
           <a
-            href={reportDownloadUrl(fileId, "md")}
+            href={reportDownloadUrl(fid, "md")}
             target="_blank"
             rel="noreferrer"
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50"
@@ -67,27 +92,45 @@ export default function ReportPage() {
             导出 Markdown
           </a>
           <a
-            href={reportDownloadUrl(fileId, "revised")}
+            href={reportDownloadUrl(fid, "revised")}
             title="仅含建议修改的条款：原文 ↔ 改写后对照，可直接发给对方谈判"
             className="rounded-lg border border-brand-600 bg-white px-3 py-2 text-sm font-medium text-brand-700 hover:bg-slate-50"
           >
             下载修订稿
           </a>
           <a
-            href={reportDownloadUrl(fileId, "checklist")}
+            href={reportDownloadUrl(fid, "checklist")}
             title="可勾选的整改清单：逐条列出待处理项，适合打印后与对方逐条核对"
             className="rounded-lg border border-brand-600 bg-white px-3 py-2 text-sm font-medium text-brand-700 hover:bg-slate-50"
           >
             整改清单
           </a>
-          <a
-            href={reportDownloadUrl(fileId, "pdf")}
-            className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700"
+          <button
+            onClick={() => handleExport("docx", "合同审查报告.docx")}
+            disabled={exporting !== null}
+            title="Word 报告（只依赖 python-docx，不依赖 GTK，任何环境都能导出）"
+            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-60"
           >
-            导出 PDF 报告
-          </a>
+            {exporting === "docx" ? "生成中…" : "导出 Word"}
+          </button>
+          <button
+            onClick={() => handleExport("pdf", "合同审查报告.pdf")}
+            disabled={exporting !== null}
+            title="PDF 需要 WeasyPrint + GTK 运行库；环境缺失时会提示改用 Word / Markdown"
+            className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
+          >
+            {exporting === "pdf" ? "生成中…" : "导出 PDF 报告"}
+          </button>
         </div>
       </div>
+
+      {/* 导出失败提示：PDF 依赖 WeasyPrint+GTK，缺失时展示后端给出的替代方案 */}
+      {exportErr && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          <b>导出失败：</b>
+          {exportErr}
+        </div>
+      )}
 
       {/* 条款超限提示（ANALYZE_MAX_CLAUSES 截断） */}
       {report.truncated && (
