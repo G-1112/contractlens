@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { analyze, getDocument, getResult } from "../api";
 import { useStore } from "../store/useStore";
 import type { ContractType, RiskItem, StreamEvent } from "../types";
@@ -10,6 +10,12 @@ const STAGE_LABEL: Record<string, string> = {
   judge: "正在 AI 逐条判定…",
   score: "正在生成评分与报告…",
 };
+
+/**
+ * 模块级在途请求表（不用组件内 ref，原因见下方 useEffect 注释）。
+ * key = fileId，value = 该次分析的 Promise。
+ */
+const inFlight = new Map<string, Promise<void>>();
 
 const CONTRACT_LABEL: Record<ContractType, string> = {
   rent: "房屋租赁合同",
@@ -34,16 +40,18 @@ export default function AnalyzePage() {
     setStage,
     setContractType,
   } = useStore();
-  const started = useRef(false);
   // 第十三轮自动分类：记住「本次为 auto 且已识别」，用于向用户明示定型结果
   const [detected, setDetected] = useState<ContractType | null>(null);
 
   useEffect(() => {
-    if (started.current || !fileId) return;
-    started.current = true;
+    // 去重放在模块级：React 18 StrictMode 在开发态会把 effect 跑两遍
+    // （挂载 → 清理 → 再挂载）。若用组件内 ref 做一次性守卫，第二遍会因守卫为真
+    // 直接返回，而第一遍已被 cleanup 里的 abort 取消 —— 页面就永远停在初始进度（8%）。
+    // 现在：同一个 fileId 只发一次请求，重挂载时复用同一个 Promise；
+    // 流式回调写入的是全局 zustand store，与组件是否重挂载无关。
+    if (!fileId || inFlight.has(fileId)) return;
 
-    const ctrl = new AbortController();
-    (async () => {
+    const task = (async () => {
       try {
         await analyze(fileId, contractType, async (e: StreamEvent) => {
           if (e.type === "progress") setProgress({ ...e });
@@ -56,19 +64,23 @@ export default function AnalyzePage() {
             // 拉取最终报告与文档
             const report = await getResult(fileId);
             const doc = await getDocument(fileId);
+            // 用户可能已中途「重新上传」：文件变了就别把页面拽回报告页
+            if (useStore.getState().fileId !== fileId) return;
             setReport(report);
             setDocument(doc);
             setStage("report");
           }
-        }, ctrl.signal);
+        });
       } catch (err) {
         if (!(err instanceof DOMException && err.name === "AbortError")) {
           setError(err instanceof Error ? err.message : "分析失败");
         }
+      } finally {
+        inFlight.delete(fileId);
       }
     })();
 
-    return () => ctrl.abort();
+    inFlight.set(fileId, task);
   }, [fileId, contractType, appendRisk, setProgress, setError, setReport, setDocument, setStage, setContractType]);
 
   const total = progress?.total ?? 0;
