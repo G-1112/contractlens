@@ -14,6 +14,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from ..schemas import Clause, LlmJudgement, RiskItem, RiskLevel, RuleHit
 
 # 等级排序：用于"抬高下限"比较
@@ -36,7 +38,7 @@ class FusionEngine:
         self,
         clauses: list[Clause],
         rule_hits: list[RuleHit],
-        llm_judgements: list[LlmJudgement | None],
+        llm_judgements: Sequence[LlmJudgement | None],
         regulation_refs: dict[str, list[str]] | None = None,
     ) -> list[RiskItem]:
         clause_map = {c.id: c for c in clauses}
@@ -136,7 +138,7 @@ class FusionEngine:
 def fuse(
     clauses: list[Clause],
     rule_hits: list[RuleHit],
-    llm_judgements: list[LlmJudgement],
+    llm_judgements: Sequence[LlmJudgement | None],
     regulation_refs: dict[str, list[str]] | None = None,
 ) -> list[RiskItem]:
     """便捷函数。"""

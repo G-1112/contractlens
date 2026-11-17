@@ -191,7 +191,8 @@ async def run_analysis_streaming(
     llm = LlmEngine(settings)
     fusion = FusionEngine()
 
-    judgements: list[LlmJudgement] = []
+    # LLM 判定结果：失败/降级时为 None（fusion 据此走 rule_only），故元素可空
+    judgements: list[LlmJudgement | None] = []
     reg_refs: dict[str, list[str]] = {}
 
     sem = asyncio.Semaphore(max(1, settings.llm_concurrency))
