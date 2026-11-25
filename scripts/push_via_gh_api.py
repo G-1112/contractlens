@@ -31,7 +31,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 GH = r"C:\Program Files\GitHub CLI\gh.exe"
 REPO = "G-1112/contractlens"
-BASE = "72661f5"  # 与远端的最近共同祖先
+BASE = "72661f5"  # 与远端的最近共同祖先（可用 --base <sha> 覆盖为增量基点）
+if "--base" in sys.argv:
+    BASE = sys.argv[sys.argv.index("--base") + 1]
 
 
 def gh(args: list[str], stdin: str | None = None) -> dict | list:
