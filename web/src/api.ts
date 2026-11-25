@@ -77,6 +77,30 @@ export async function getHealth(): Promise<{ status: string; access_gate: boolea
  * 用一个必然不存在的 file_id 打 /api/result/：401=口令不对，
  * 任何其它状态（404）都说明已通过门禁。
  */
+/** 登录（第十四轮，区域赛升级）：账号+密码 → 校验通过返回访问口令 token。 */
+export async function reviewLogin(
+  username: string,
+  password: string,
+): Promise<{ ok: boolean; token?: string; detail?: string }> {
+  const res = await fetch(`${BASE}/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
+  });
+  if (res.ok) {
+    const data = await res.json();
+    return { ok: true, token: data.token };
+  }
+  let detail = "账号或密码不正确";
+  try {
+    const j = await res.json();
+    if (j?.detail) detail = j.detail;
+  } catch {
+    /* 忽略非 JSON 错误体 */
+  }
+  return { ok: false, detail };
+}
+
 export async function probeReviewCode(): Promise<boolean> {
   const res = await fetch(`${BASE}/result/__probe__`, { headers: authHeaders() });
   return res.status !== 401;

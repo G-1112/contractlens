@@ -49,8 +49,15 @@ def _safe_div(a: float, b: float) -> float:
     return a / b if b else 0.0
 
 
-async def run() -> dict:
-    labels = json.loads(LABELS.read_text(encoding="utf-8"))
+async def run(split: list[str] | None = None, dump: Path | None = None) -> dict:
+    labels_all = json.loads(LABELS.read_text(encoding="utf-8"))
+    if split is not None:
+        missing = [f for f in split if f not in labels_all]
+        if missing:
+            raise SystemExit(f"[x] split 中的合同不在标注集：{missing[:3]}")
+        labels = {f: labels_all[f] for f in split}
+    else:
+        labels = labels_all
 
     # 防呆（2026-11-02）：标注未完成的条款 is_risk 为 None，若照常打分，
     # `if gold_risk` 会把 None 当作「非风险」，把真阳性全算成 FP/FN，
@@ -72,6 +79,7 @@ async def run() -> dict:
     fp_by_source: dict[str, int] = defaultdict(int)
     total_c = 0   # 实际参与判定的标注条款数
     tn = 0        # 金标无风险且系统未命中（真负例）
+    dump_rows: list[dict] = []
 
     for filename, meta in labels.items():
         ctype = meta["contract_type"]
@@ -82,6 +90,7 @@ async def run() -> dict:
         # clause_id → 条款序号
         idx_of = {c.id: i for i, c in enumerate(parsed.clauses)}
         pred: dict[int, tuple[str, str]] = {}
+        item_info: dict[int, tuple] = {}
         for it in report.items:
             if it.clause_id.startswith("missing-"):
                 continue  # 文档级缺失项，不参与条款级评测
@@ -93,6 +102,7 @@ async def run() -> dict:
             order = {"高": 3, "中": 2, "低": 1, "无": 0}
             if prev is None or order.get(it.final_level, 0) > order.get(prev[0], 0):
                 pred[i] = (it.final_level, it.source)
+                item_info[i] = (it.risk_type, ",".join(it.rule_ids), it.explain[:80])
 
         for g in meta["clauses"]:
             i = g["index"]
@@ -114,10 +124,28 @@ async def run() -> dict:
             else:
                 tn += 1
 
+            dump_rows.append({
+                "contract": filename,
+                "type": ctype,
+                "index": i,
+                "text": g["text"],
+                "gold_risk": gold_risk,
+                "gold_level": g.get("level"),
+                "pred_level": got[0] if got else None,
+                "pred_source": got[1] if got else None,
+                "risk_type": item_info[i][0] if got else "",
+                "rule_ids": item_info[i][1] if got else "",
+                "explain": item_info[i][2] if got else "",
+            })
+
+    if dump is not None:
+        dump.write_text(json.dumps(dump_rows, ensure_ascii=False, indent=1), encoding="utf-8")
+        print(f"逐条预测明细已写入：{dump}")
+
     return {
         "per_type": dict(per_type),
         "fp_by_source": dict(fp_by_source),
-        "totals": {"annotated": total_c, "tn": tn},
+        "totals": {"annotated": total_c, "tn": tn, "contracts": len(labels)},
     }
 
 
@@ -154,7 +182,7 @@ def render(result: dict) -> str:
             f"标注方式：{anno_method}。"
             "样本量小、来源分布单一，置信区间宽，引用时须同时给出样本量与口径。"
         ),
-        f"> 样本：{len(json.loads(LABELS.read_text(encoding='utf-8')))} 份合同，",
+        f"> 样本：{result['totals']['contracts']} 份合同，",
         f"标注条款 {result['totals']['annotated']} 条（风险 {tot['tp'] + tot['fn']} 条），"
         f"其中 TP+FP+FN {tot['tp'] + tot['fp'] + tot['fn']} 条、真负例 {result['totals']['tn']} 条。",
         f"> 运行环境：本机 {_env_desc()}。",
@@ -184,11 +212,22 @@ def render(result: dict) -> str:
     lines += ["", "## 误报（FP）来源分析", "", "| 判定来源 | FP 数 |", "|---|---|"]
     for src, n in sorted(result["fp_by_source"].items(), key=lambda x: -x[1]):
         lines.append(f"| {src} | {n} |")
+    from api.config import get_settings as _gs
+    if _gs().llm_api_key:
+        lines += [
+            "",
+            "说明：`llm_only` 误报来自 LLM 直接判定（未获规则或检索佐证即标记风险），",
+            "`rule_override` 来自规则抬级与 LLM 判定不一致。两者是收敛迭代的主要对象。",
+            "",
+        ]
+    else:
+        lines += [
+            "",
+            "说明：`llm_only` 的误报主要来自 mock 模式的确定性启发式（无 LLM Key 时的降级策略），",
+            "接入真实 LLM 后该部分会被语义判定替换，指标需重新实测。",
+            "",
+        ]
     lines += [
-        "",
-        "说明：`llm_only` 的误报主要来自 mock 模式的确定性启发式（无 LLM Key 时的降级策略），",
-        "接入真实 LLM 后该部分会被语义判定替换，指标需重新实测。",
-        "",
         "## 复现命令",
         "",
         "```bash",
@@ -211,6 +250,13 @@ async def main() -> None:
         help="评测集目录（默认 data/evalset 合成集；真实集传 --evalset data/evalset_real）",
     )
     ap.add_argument("--report", type=Path, default=None, help="报告输出路径")
+    ap.add_argument(
+        "--split",
+        choices=["dev", "holdout", "all"],
+        default="all",
+        help="合同分组（读 data/evalset_real/split.json；all=不过滤）",
+    )
+    ap.add_argument("--dump", type=Path, default=None, help="逐条预测明细 JSON 输出路径")
     args = ap.parse_args()
 
     evalset = args.evalset if args.evalset.is_absolute() else ROOT / args.evalset
@@ -219,6 +265,8 @@ async def main() -> None:
     IS_SYNTHETIC = evalset.name == "evalset"
     if args.report:
         REPORT = args.report
+    elif not IS_SYNTHETIC and args.split != "all":
+        REPORT = ROOT / "docs" / "iteration" / "regional_v2" / f"eval-real-{args.split}.md"
     elif not IS_SYNTHETIC:
         REPORT = ROOT / "docs" / "eval-accuracy-real.md"
 
@@ -227,7 +275,16 @@ async def main() -> None:
         print("    真实集需先运行：python scripts/annotate_real.py --init && --interactive <文件>")
         return
 
-    result = await run()
+    split: list[str] | None = None
+    if args.split != "all":
+        split_file = evalset / "split.json"
+        if not split_file.exists():
+            raise SystemExit(f"[x] 找不到分组文件：{split_file}")
+        groups = json.loads(split_file.read_text(encoding="utf-8"))
+        split = groups[args.split]
+        print(f"分组={args.split}：{len(split)} 份合同 {split}")
+
+    result = await run(split=split, dump=args.dump)
     text = render(result)
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(text, encoding="utf-8")

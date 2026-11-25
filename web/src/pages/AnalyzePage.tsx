@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { analyze, getDocument, getResult } from "../api";
+import { saveRecent } from "../recent";
 import { useStore } from "../store/useStore";
 import type { RiskItem, StreamEvent } from "../types";
 import RiskCard from "../components/RiskCard";
@@ -36,6 +37,8 @@ export default function AnalyzePage() {
       const doc = await getDocument(fileId);
       setReport(report);
       setDocument(doc);
+      // 第十五轮（R-UX-01）：报告可见即记录到「最近的分析」，刷新/误关可重开
+      saveRecent({ fileId, contractType, filename: useStore.getState().filename || fileId });
       setStage("report");
     };
 

@@ -21,7 +21,8 @@ rules:
     risk_type: 押金
     detect: keyword
     keywords: ["收取押金", "保证金", "缴纳培训费", "实习押金", "收取费用"]
-    explanation: 以实习名义收取押金、保证金或培训费，属于违规收费。
+    negate: ["不得", "禁止", "无需"]
+    explanation: 以实习名义收取押金、保证金或培训费，属于违规收费（含"不得/禁止"禁止性表述的为保护性条款，不触发）。
 
   - id: I25
     level: 中

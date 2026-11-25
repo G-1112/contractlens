@@ -161,8 +161,168 @@ def normalize(s: str) -> str:
     return _PUNCT.sub("", s)
 
 
+# 第十八轮（R-DOC-01）：抓取脚本产出的权威全文索引（条号制 + containment 制）
+_AUTHORITY: dict = {}
+_AUTH_FULL: dict[str, str] = {}
+try:
+    _ap = Path(__file__).resolve().parents[1] / "data" / "regulations" / "_authority" / "index.json"
+    if _ap.exists():
+        _raw = json.loads(_ap.read_text(encoding="utf-8"))
+        for _name, _entry in _raw.items():
+            if _entry.get("mode") == "articles":
+                _AUTHORITY[_name] = _entry["articles"]
+            else:
+                _AUTH_FULL[_name] = _entry.get("full", "")
+except Exception:  # noqa: BLE001 索引缺失/损坏时退回旧行为
+    _AUTHORITY, _AUTH_FULL = {}, {}
+
+# 库内历史题名 → 权威文件名（意见类 containment 比对用）
+_TITLE_ALIAS = {
+    "关于规范住房租赁市场的通知": [
+        "关于整顿规范住房租赁市场秩序的意见",
+        "关于加强轻资产住房租赁企业监管的意见",
+    ],
+}
+
+CN_NUM = "[一二三四五六七八九十百零〇]+"
+_CN_DIG = {"零": 0, "〇": 0, "一": 1, "二": 2, "三": 3, "四": 4, "五": 5,
+           "六": 6, "七": 7, "八": 8, "九": 9}
+
+
+def cn_to_int(cn: str) -> int | None:
+    """中文数字 → int（与 fetch_authority_laws 同逻辑）。"""
+    if not cn or not re.fullmatch(r"[一二三四五六七八九十百零〇]+", cn):
+        return None
+    cn = cn.replace("〇", "零")
+    if cn == "十":
+        return 10
+    if "百" in cn:
+        head, tail = cn.split("百", 1)
+
+        def _sub(x: str) -> int:
+            if not x:
+                return 0
+            if "十" in x:
+                a, b = x.split("十", 1)
+                return (_CN_DIG.get(a, 1) if a else 1) * 10 + (_CN_DIG.get(b, 0) if b else 0)
+            return _CN_DIG.get(x, 0)
+
+        return _sub(head) * 100 + _sub(tail)
+    if "十" in cn:
+        a, b = cn.split("十", 1)
+        return (_CN_DIG.get(a, 1) if a else 1) * 10 + (_CN_DIG.get(b, 0) if b else 0)
+    return _CN_DIG.get(cn)
+
+# 常识性条目：非法定条文引用，不适用逐字比对，单独归类
+_COMMON_TITLES = {"租赁常识", "劳动合同常识", "实习协议常识", "实习协议常识 "}
+
+
+def _norm_cn(s: str) -> str:
+    """去掉空白与标点，保留文字（供 containment 匹配）。"""
+    return re.sub(r"[\s，。；：、（）()“”\"'\"《》〈〉·…—\-－\.,;:!?！？]+", "", unicodedata.normalize("NFKC", s or ""))
+
+
+def _check_authority(item: dict) -> tuple[str, str] | None:
+    """第十八轮：优先用抓取的权威全文核验。命中返回 (verified, 说明)。"""
+    title = item["title"]
+    section = item.get("section", "")
+    src = normalize(item["text"])
+
+    # 条号制法规
+    if title in _AUTHORITY and section:
+        num_m = re.search(rf"第({CN_NUM})条", section)
+        if num_m:
+            v = cn_to_int(num_m.group(1))
+            art = _AUTHORITY[title].get(str(v), "") if v is not None else ""
+            if art:
+                gold = normalize(art)
+                if src and (src in gold or (len(src) >= 12 and gold and src[: len(gold)] in gold) or (len(gold) >= 12 and gold[: len(src)] in src if len(gold) >= len(src) else False)):
+                    return "verified", f"条号命中权威全文（{_AUTH_SOURCE.get(title, '权威渠道')}）"
+                if src and src and len(src) >= 12:
+                    cov = sum(1 for i in range(0, len(src), 8) if src[i : i + 8] in gold) / max(1, len(range(0, len(src), 8)))
+                    if cov >= 0.8:
+                        return "verified", f"条号命中权威全文（8字窗口覆盖率 {cov:.0%}）"
+                return "mismatch", f"与权威全文不一致，需人工复核（{_AUTH_SOURCE.get(title, '权威渠道')}）"
+
+    # 意见类：库内文本在权威全文中逐字出现（containment）
+    for alias in _TITLE_ALIAS.get(title, []):
+        full = _AUTH_FULL.get(alias, "")
+        if full and src and len(src) >= 12:
+            if _norm_cn(src) in _norm_cn(full):
+                return "verified", f"逐字命中《{alias}》全文（{_AUTH_SOURCE.get(alias, '权威渠道')}）"
+    return None
+
+
+_AUTH_SOURCE: dict[str, str] = {}
+try:
+    _ap2 = Path(__file__).resolve().parents[1] / "data" / "regulations" / "_authority" / "index.json"
+    if _ap2.exists():
+        for _name, _entry in json.loads(_ap2.read_text(encoding="utf-8")).items():
+            _AUTH_SOURCE[_name] = _entry.get("url", "权威渠道")
+except Exception:  # noqa: BLE001
+    pass
+
+
+def _relocate(item: dict) -> tuple[str, str] | None:
+    """条号勘误：库内条号与现行版不符时，在权威全文中按文本重新定位条号。
+
+    背景（第十八轮实测）：库内 intern 条目按 2016 版编号书写，2021 修订版
+    重新编号后大量条号错位——mismatch 不是文本错误，是条号过期。
+    找到 ≥80% 覆盖的条号 → 更新 item['section'] 并返回 verified；
+    找不到 → None（保持 mismatch，留人工复核）。
+    """
+    title = item["title"]
+    arts = _AUTHORITY.get(title)
+    if not arts:
+        return None
+    src = normalize(item["text"])
+    if len(src) < 12:
+        return None
+    best: tuple[float, str] | None = None
+    for num, art in arts.items():
+        gold = normalize(art)
+        cov = sum(1 for i in range(0, len(src), 8) if src[i : i + 8] in gold) / max(
+            1, len(range(0, len(src), 8))
+        )
+        if cov >= 0.8 and (best is None or cov > best[0]):
+            best = (cov, num)
+    if best is None:
+        return None
+    cov, num = best
+    old_sec = item["section"]
+    item["section"] = f"第{num}条"
+    return "verified", f"条号勘误：原标{old_sec}→现行版第{num}条（8字窗口覆盖率 {cov:.0%}）"
+
+
 def check(item: dict) -> tuple[str, str]:
-    """返回 (状态, 说明)。状态 ∈ verified / mismatch / no_corpus。"""
+    """返回 (状态, 说明)。状态 ∈ verified / mismatch / no_corpus / 常识类。"""
+    # 第十八轮：先走权威全文
+    r = _check_authority(item)
+    if r is not None:
+        if r[0] == "mismatch" and item["title"] in _AUTHORITY:
+            # 条号过期（如 2016→2021 版重编号）：在现行版中重新定位条号
+            fixed = _relocate(item)
+            if fixed is not None:
+                return fixed
+            # 定位不到逐字命中 → 判定是否为「摘要式条目」：文本对某一条文
+            # 有显著对应（最佳覆盖率 ≥45%）但为人工概括，非逐字引用。
+            best_cov, best_num = 0.0, None
+            src = normalize(item["text"])
+            for num, art in _AUTHORITY[item["title"]].items():
+                gold = normalize(art)
+                cov = sum(1 for i in range(0, len(src), 8) if src[i : i + 8] in gold) / max(
+                    1, len(range(0, len(src), 8))
+                )
+                if cov > best_cov:
+                    best_cov, best_num = cov, num
+            if best_num and best_cov >= 0.45:
+                return "summary", (
+                    f"摘要式条目：表述为人工概括（最佳对应现行版第{best_num}条，"
+                    f"覆盖率 {best_cov:.0%}），非逐字引用——条号以现行版为准"
+                )
+        return r
+    if item["title"] in _COMMON_TITLES:
+        return "no_corpus", "常识性条目，非法定条文引用，不适用逐字比对"
     key = f"{item['title']} · {item['section']}"
     ref = CORPUS.get(key)
     if ref is None:
@@ -191,7 +351,7 @@ def main() -> int:
 
     today = date.today().isoformat()
     rows: list[tuple[str, str, str, str]] = []
-    stats = {"verified": 0, "mismatch": 0, "no_corpus": 0}
+    stats = {"verified": 0, "mismatch": 0, "no_corpus": 0, "summary": 0}
 
     for f in sorted(REG_DIR.glob("*.json")):
         items = json.loads(f.read_text(encoding="utf-8"))
@@ -217,6 +377,7 @@ def main() -> int:
         "| 状态 | 条数 | 占比 |",
         "|---|---|---|",
         f"| ✅ verified（已核） | {stats['verified']} | {stats['verified']/total:.1%} |",
+        f"| 📝 摘要式（人工概括，条号已定位） | {stats['summary']} | {stats['summary']/total:.1%} |",
         f"| ⚠️ mismatch（不一致，需复核） | {stats['mismatch']} | {stats['mismatch']/total:.1%} |",
         f"| ⬜ 待核（本轮未取权威原文） | {stats['no_corpus']} | {stats['no_corpus']/total:.1%} |",
         f"| **合计** | **{total}** | 100% |",

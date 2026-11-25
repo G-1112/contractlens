@@ -13,7 +13,8 @@ rules:
     operator: gt
     threshold: 2
     ratio: false
-    explanation: 押金超过两个月租金，明显高于市场惯例，退还风险高。
+    negate: ["不得超过", "不超过", "一般不超过", "不应超过"]
+    explanation: 押金超过两个月租金，明显高于市场惯例，退还风险高（"不得超过一个月租金"等保护性提示不触发）。
 
   - id: R02
     level: 高
@@ -57,8 +58,8 @@ rules:
     risk_type: 涨租
     detect: keyword
     keywords: ["单方涨租", "单方面提高租金", "甲方有权调整租金", "甲方可随时调整租金"]
-    negate: ["经双方协商", "经租客同意", "经乙方同意"]
-    explanation: 房东可单方涨租且无上限约定，租期成本不可控。
+    negate: ["经双方协商", "经租客同意", "经乙方同意", "不得", "须经", "应当经"]
+    explanation: 房东可单方涨租且无上限约定，租期成本不可控（含"不得单方调整"等禁止性表述的保护条款不触发）。
 
   - id: R19
     level: 高
@@ -88,15 +89,16 @@ rules:
     operator: ge
     threshold: 3
     ratio: false
-    explanation: 违约金高达三个月租金以上，显著超出合理范围。
+    negate: ["不得超过", "不超过", "一般不超过"]
+    explanation: 违约金高达三个月租金以上，显著超出合理范围（"不得超过三个月租金"等保护性提示不触发）。
 
   - id: R13
     level: 高
     risk_type: 解约
     detect: keyword
     keywords: ["甲方有权单方解除", "甲方可随时解除", "甲方有权任意解除"]
-    negate: ["乙方违约", "租客违约", "欠租"]
-    explanation: 房东无需租客违约即可单方解除合同，租客居住权无保障。
+    negate: ["乙方违约", "租客违约", "欠租", "有下列情形之一"]
+    explanation: 房东无需租客违约即可单方解除合同，租客居住权无保障（"乙方有下列情形之一的，甲方有权解除"属违约触发式解除，不触发）。
 
   - id: R12
     level: 中

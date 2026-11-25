@@ -156,14 +156,30 @@ class RuleEngine:
 
     # ------------------------------------------------------------------
     def _match_threshold(self, rule: Rule, text: str) -> bool:
-        """数值阈值检测。"""
+        """数值阈值检测。
+
+        第十三轮修复（区域赛收敛迭代 · 实证 32 条 FP）：规则要求特定单位
+        （如「个月」）时，此前「无单位数值也参与比较」——列表序号「（三）」
+        被提取为 (3.0, "")，在「押金 > 2 个月」规则下直接命中高风险。
+        修复：要求单位时只比较显式带该单位的数值；无单位数值不再放行。
+        """
         anchor_hit = rule.anchor in text if rule.anchor else True
         if not anchor_hit:
             return False
+        # 第十三轮修复：阈值规则同样支持 negate ——「押金一般不得超过一个月租金」
+        # 属保护性提示，不应触发「押金 > 2 个月」。
+        for neg in rule.negate:
+            if neg and neg in text:
+                return False
         pairs = self._extract_number_unit_pairs(text)
-        for num, unit in pairs:
-            # 单位过滤：规则要求特定单位时，仅比较带该单位（或无单位）的数值
-            if rule.unit and unit and unit != rule.unit:
+        for num, unit, pos in pairs:
+            # 单位过滤：规则要求特定单位时，仅比较显式带该单位的数值
+            if rule.unit and unit != rule.unit:
+                continue
+            # 第十三轮修复：数字级否定语境——「不得超过/不超过」紧邻的数值是
+            # 保护性上限提示，不是实际约定的过高数值。
+            window = text[max(0, pos - 8):pos]
+            if any(k in window for k in ("不得超过", "不超过", "一般不超过", "不应超过", "不得高于", "不得低于")):
                 continue
             value = num if not rule.ratio else num  # ratio 值已在提取阶段归一化
             if self._compare(value, rule.operator, rule.threshold):
@@ -184,14 +200,16 @@ class RuleEngine:
 
     # ------------------------------------------------------------------
     @classmethod
-    def _extract_number_unit_pairs(cls, text: str) -> list[tuple[float, str]]:
-        """提取 (数值, 单位) 对，中文数字自动换算。
+    def _extract_number_unit_pairs(cls, text: str) -> list[tuple[float, str, int]]:
+        """提取 (数值, 单位, 位置) 三元组，中文数字自动换算。
 
-        - "押金为三个月租金" → (3.0, "个月")
-        - "违约金 200%" → (200.0, "%")
-        - "赔付 5000 元" → (5000.0, "元")
+        - "押金为三个月租金" → (3.0, "个月", 3)
+        - "违约金 200%" → (200.0, "%", 3)
+
+        第十三轮修复（区域赛收敛迭代）：新增位置信息供阈值匹配做否定语境检查——
+        「押金一般不得超过一个月租金」中的 1 不构成「押金>1个月」风险。
         """
-        pairs: list[tuple[float, str]] = []
+        pairs: list[tuple[float, str, int]] = []
         for m in _NUM_UNIT.finditer(text):
             # 第十二轮修复（实证 P1）：条款序号（第N条/款/项/章/节）不是业务数值。
             # 原实现把「第三条」提取为 (3.0, "")，在「单位不限/无单位数值也参与比较」
@@ -206,7 +224,17 @@ class RuleEngine:
             num = cls._to_number(raw)
             if num is None:
                 continue
-            pairs.append((num, unit))
+            # 第十三轮修复（区域赛收敛迭代）：无单位数值若是列表序号，不是业务数值。
+            # 「（三）」「1.」「一、」「3．」此前被当作数值参与阈值比较（配合无单位
+            # 放行口径造成大面积误报）；带单位的数值（如「3个月」「5%」）不受影响。
+            if not unit:
+                if next_ch in (".", "．", "、", "）", ")") and prev_ch in ("（", "(", "", " ", "任", "款", "条"):
+                    continue
+                if prev_ch in "（(" and next_ch in ("）", ")"):
+                    continue
+                if prev_ch == "、" or prev_ch in "一二三四五六七八九十" and next_ch == "、":
+                    continue
+            pairs.append((num, unit, m.start()))
         return pairs
 
     @staticmethod

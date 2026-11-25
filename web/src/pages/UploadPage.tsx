@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
-import { fetchSample, uploadFile } from "../api";
+import { fetchSample, getDocument, getResult, uploadFile } from "../api";
 import { useStore } from "../store/useStore";
+import { loadRecent, removeRecent, type RecentReport } from "../recent";
 import type { ContractType } from "../types";
 
 const CONTRACT_TYPES: { value: ContractType; label: string; desc: string }[] = [
@@ -30,7 +31,35 @@ export default function UploadPage() {
   // 此前前端只把它存进 store 就立刻进入分析，导致用户要等到分析阶段
   // 才收到 NO_TEXT_LAYER 报错。这里改为上传后立即拦下并给出可操作指引。
   const [noTextLayer, setNoTextLayer] = useState(false);
+  const [recents, setRecents] = useState<RecentReport[]>(() => loadRecent());
+  const [openingId, setOpeningId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // 第十五轮（R-UX-01）：刷新/误关标签页后可从「最近的分析」一键重开报告
+  const openRecent = useCallback(
+    async (r: RecentReport) => {
+      setOpeningId(r.fileId);
+      setErr(null);
+      try {
+        const [report, doc] = await Promise.all([
+          getResult(r.fileId),
+          getDocument(r.fileId),
+        ]);
+        const { setFile, setDocument, setReport } = useStore.getState();
+        setFile(r.fileId, r.contractType as ContractType, r.filename || r.fileId);
+        setDocument(doc);
+        setReport(report);
+        setStage("report");
+      } catch {
+        // 结果已过期（后端重启等）：从列表移除并提示
+        setRecents(removeRecent(r.fileId));
+        setErr("该报告已失效（服务已重启或结果过期），请重新上传分析");
+      } finally {
+        setOpeningId(null);
+      }
+    },
+    [setStage],
+  );
 
   const doUpload = useCallback(async () => {
     if (!file) return;
@@ -94,6 +123,36 @@ export default function UploadPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
+      {/* 最近的分析（R-UX-01）：刷新/误关后一键重开 */}
+      {recents.length > 0 && (
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="mb-3 text-sm font-semibold text-slate-700">最近的分析 · 点击重开报告</div>
+          <div className="space-y-2">
+            {recents.map((r) => (
+              <button
+                key={r.fileId}
+                onClick={() => openRecent(r)}
+                disabled={openingId !== null}
+                className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-sm transition hover:border-brand-300 hover:bg-brand-50/50 disabled:opacity-50"
+              >
+                <span className="truncate">
+                  {r.filename || r.fileId}
+                  <span className="ml-2 text-xs text-slate-400">
+                    {r.contractType} · {new Date(r.ts).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </span>
+                <span className="ml-3 shrink-0 text-xs font-medium text-brand-600">
+                  {openingId === r.fileId ? "打开中…" : "重开报告 →"}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] text-slate-400">
+            记录仅保存在本机浏览器；服务重启后旧报告会自动失效并从列表移除。
+          </p>
+        </div>
+      )}
+
       <div className="mb-8 text-center">
         <h2 className="text-2xl font-bold">上传一份合同，逐条看清风险</h2>
         <p className="mt-2 text-slate-500">

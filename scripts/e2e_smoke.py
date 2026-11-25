@@ -30,8 +30,17 @@ def make_client() -> httpx.Client:
     沙箱/CI 环境常注入 127.0.0.1:<port> 的本地代理，代理对同一 keep-alive
     连接的第二个请求起会返回 404，表现为「首次 200、之后全部 404」的假故障。
     本地 127.0.0.1 无需代理，故显式关闭。
+
+    第十三轮补：服务端开启评审口令门禁后，冒烟请求自动携带
+    REVIEW_ACCESS_CODE（本地 .env 已有），无该变量时按无门禁服务使用。
     """
-    return httpx.Client(trust_env=False)
+    import os
+
+    headers = {}
+    code = (os.environ.get("REVIEW_ACCESS_CODE") or "").strip()
+    if code:
+        headers["X-Review-Code"] = code
+    return httpx.Client(trust_env=False, headers=headers)
 
 
 def upload(client: httpx.Client, path: Path, ctype: str) -> str:

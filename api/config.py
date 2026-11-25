@@ -99,6 +99,13 @@ class Settings:
     #   - 留空（默认）= 不启用门禁，本地开发与既有测试行为完全不变；
     #   - 设置后，/api/* 业务端点需带 X-Review-Code 头或 ?code= 参数。
     review_access_code: str = os.getenv("REVIEW_ACCESS_CODE", "").strip()
+    # 登录界面的账号（第十四轮，区域赛升级）：与 review_access_code 组成
+    # 「账号 + 密码」对，供平台表单「账号/密码」栏与 /api/login 校验。
+    # 未设置时默认 reviewer；密码即 review_access_code。
+    review_username: str = os.getenv("REVIEW_USERNAME", "reviewer").strip()
+    # 会话令牌有效期（秒，默认 2 小时）。登录返回 HMAC 签名令牌，过期需重新登录；
+    # 令牌可过期/不可伪造，替代"明文口令当 token 用"（第十五轮安全升级 R-AUTH-03）。
+    review_session_ttl: int = int(os.getenv("REVIEW_SESSION_TTL", "7200"))
 
     # ---- 业务 ----
     max_pages: int = 30  # 单份合同页数上限
