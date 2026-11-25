@@ -14,8 +14,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from ..schemas import Clause, LlmJudgement, RiskItem, RiskLevel, RuleHit
 
 # 等级排序：用于"抬高下限"比较
@@ -38,7 +36,7 @@ class FusionEngine:
         self,
         clauses: list[Clause],
         rule_hits: list[RuleHit],
-        llm_judgements: Sequence[LlmJudgement | None],
+        llm_judgements: list[LlmJudgement | None],
         regulation_refs: dict[str, list[str]] | None = None,
     ) -> list[RiskItem]:
         clause_map = {c.id: c for c in clauses}
@@ -86,6 +84,12 @@ class FusionEngine:
 
             # 无风险且非规则命中 → 不进入风险列表（保持结果干净）
             if final_level == "无" and source in ("llm_only",):
+                continue
+            # 第十三轮（区域赛收敛迭代 · 实证）：LLM-only 的「低」不单独成卡。
+            # dev 实测 131 个 FP 中 33 个为 LLM-only 低风险（中性条款被模型
+            # 谨慎标记），丢弃后召回仅损失 2/71，P 显著回升。低置信发现
+            # 不冒充风险结论，是精度导向的产品决策。
+            if source == "llm_only" and final_level == "低":
                 continue
 
             needs_review = source == "rule_override"
@@ -138,7 +142,7 @@ class FusionEngine:
 def fuse(
     clauses: list[Clause],
     rule_hits: list[RuleHit],
-    llm_judgements: Sequence[LlmJudgement | None],
+    llm_judgements: list[LlmJudgement],
     regulation_refs: dict[str, list[str]] | None = None,
 ) -> list[RiskItem]:
     """便捷函数。"""

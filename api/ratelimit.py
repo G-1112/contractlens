@@ -137,6 +137,11 @@ class DailyBudget:
         self._day = time.strftime("%Y-%m-%d")
 
 
+# 登录接口限流（第十五轮，R-AUTH-03）：防在线爆破的第二道闸
+# （第一道是 main.py 的连续失败锁定）。10 次/分钟/IP，成功失败都计数。
+login_limiter = RateLimiter(max_calls=10, window_seconds=60.0)
+
+
 # 全局 LLM 日配额；上限由环境变量 LLM_DAILY_BUDGET 决定（0 = 不限，本地默认）
 llm_budget = DailyBudget(max_calls=_daily_budget_from_env())
 

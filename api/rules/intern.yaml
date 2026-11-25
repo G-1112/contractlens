@@ -21,7 +21,8 @@ rules:
     risk_type: 押金
     detect: keyword
     keywords: ["收取押金", "保证金", "缴纳培训费", "实习押金", "收取费用"]
-    explanation: 以实习名义收取押金、保证金或培训费，属于违规收费。
+    negate: ["不得", "禁止", "无需"]
+    explanation: 以实习名义收取押金、保证金或培训费，属于违规收费（含"不得/禁止"禁止性表述的为保护性条款，不触发）。
 
   - id: I25
     level: 中
@@ -184,26 +185,3 @@ rules:
     detect: keyword
     keywords: ["违约金", "赔偿金", "提前离开赔偿"]
     explanation: 实习协议约定违约金，需核对是否合理，实习生一般不应承担高额违约金。
-
-  # ---------------- 惩罚性扣款 / 高危作业 / 协议文本（补充） ----------------
-  - id: I26
-    level: 中
-    risk_type: 报酬
-    detect: keyword
-    keywords: ["请假扣除双倍", "旷工一天扣三天", "病假扣除全部", "迟到扣除全部"]
-    explanation: 以请假/旷工为由加倍或全额克扣实习报酬，惩罚性扣款显失公平。
-
-  - id: I27
-    level: 高
-    risk_type: 安全
-    detect: keyword
-    keywords: ["从事高危作业", "高空作业", "危险作业", "特种设备操作"]
-    negate: ["培训", "指导", "保险", "防护"]
-    explanation: 安排实习生从事高危/特种作业且缺乏保护保障，严重威胁人身安全。
-
-  - id: I28
-    level: 低
-    risk_type: 其他
-    detect: missing
-    must_contain: ["协议一式", "持有一份", "各执一份", "两份"]
-    explanation: 未约定协议份数与实习生持有一份，实习生可能拿不到协议文本。

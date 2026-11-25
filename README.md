@@ -52,6 +52,20 @@ contractlens/
 | `verify_export_online.py` | 线上五格式导出复验（PDF 魔数 + 404 路径） | `python scripts/verify_export_online.py <base_url>` |
 | `scan_anonymity.py` | **匿名评审脱敏闸门**：命中学校/姓名/学号/导师/邮箱即退出码 1 | `python scripts/scan_anonymity.py` |
 
+## 🆕 第 14–17 轮升级摘要（2026-11-24/25，区域赛）
+
+| 轮次 | 内容 | 关键数字 |
+|---|---|---|
+| 13 | 检索器对照实验（BM25 盲评胜 76% 但端到端 F1 降，回滚 TF-IDF） | F1 0.7240 · 检索 65.2ms |
+| 14 | 登录界面（账号+密码双字段，平台表单要求） | reviewer / 口令 |
+| 15 | 前端分包（echarts/core 按需 + 动态 import） | 主 JS 1.32MB → 187KB |
+| 16 | HMAC 会话令牌（2h 过期/防篡改/审计日志）+ 最近分析一键重开 | 门禁 15 项巡检全绿 |
+| 17 | 静态资源 gzip + immutable 缓存（避开 SSE） | 主 JS 传输 189KB → 60KB |
+
+新环境变量：`REVIEW_USERNAME`（登录账号，默认 reviewer）、`REVIEW_SESSION_TTL`（会话秒数，默认 7200）。
+证据链：`docs/iteration/regional_v2/收敛迭代报告.md`、`docs/检索器对照实验.md`、
+`docs/通用大模型对照实验.md`、`docs/可用性验证记录.md`、`docs/prompt-log/`。
+
 ## ⚖️ 两种运行口径的实测差异（务必按口径引用数字）
 
 同一份 `借款合同样本.docx`，本机实测：

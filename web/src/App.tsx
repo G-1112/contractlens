@@ -4,7 +4,7 @@ import UploadPage from "./pages/UploadPage";
 import AnalyzePage from "./pages/AnalyzePage";
 import ReportPage from "./pages/ReportPage";
 import GateScreen from "./components/GateScreen";
-import { getHealth, getReviewCode, probeReviewCode, setReviewCode } from "./api";
+import { getHealth, getReviewCode, probeReviewCode, reviewLogin, setReviewCode } from "./api";
 
 type GateState = "checking" | "locked" | "open";
 
@@ -59,15 +59,20 @@ export default function App() {
     };
   }, []);
 
-  async function unlock(code: string) {
-    setReviewCode(code);
+  async function unlock(username: string, password: string) {
     setGateError("");
+    const r = await reviewLogin(username, password);
+    if (!r.ok || !r.token) {
+      setGateError(r.detail || "账号或密码不正确，请重新输入");
+      return;
+    }
+    setReviewCode(r.token);
     const ok = await probeReviewCode();
     if (ok) {
       setGate("open");
     } else {
       setReviewCode("");
-      setGateError("口令不正确，请重新输入");
+      setGateError("登录校验未通过，请重试");
     }
   }
 

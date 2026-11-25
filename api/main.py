@@ -73,7 +73,7 @@ async def security_headers(request: Request, call_next) -> Response:
 #   - 已设置 → /api/* 业务端点需带 X-Review-Code 头或 ?code= 查询参数；
 #   - /api/health 放行（部署平台健康检查依赖它），静态资源放行（否则页面打不开）。
 # 口令用 compare_digest 常量时间比较，避免计时侧信道。
-_GUARD_EXEMPT = {"/api/health"}
+_GUARD_EXEMPT = {"/api/health", "/api/login"}
 
 
 @app.middleware("http")
@@ -85,6 +85,11 @@ async def review_access_guard(request: Request, call_next) -> Response:
 
     import hmac
 
+    # 第十五轮：优先校验会话令牌（X-Review-Session，HMAC 签名 + 有效期）
+    session = request.headers.get("x-review-session", "")
+    if session and _session_verify(session):
+        return await call_next(request)
+
     provided = request.headers.get("x-review-code") or request.query_params.get("code", "")
     if not hmac.compare_digest(provided.encode(), expected.encode()):
         return Response(
@@ -93,6 +98,108 @@ async def review_access_guard(request: Request, call_next) -> Response:
             media_type="application/json",
         )
     return await call_next(request)
+
+
+# ---------------------------------------------------------------------------
+# 登录接口与会话令牌（R-AUTH-02/03，第十四/十五轮）
+# ---------------------------------------------------------------------------
+# 第十四轮：真登录（账号+密码，平台表单要求）。
+# 第十五轮安全升级：登录不再把明文口令当 token 返回，改发 HMAC-SHA256 签名的
+# 会话令牌（payload=用户名+过期时间戳）——可过期、不可伪造、泄露不等于口令泄露；
+# 门禁中间件同时接受 X-Review-Session（会话）与 X-Review-Code（?code= 直链兼容）。
+# 防爆破双闸：login_limiter（10→20 次/分钟/IP）+ 连续失败 5 次锁定 60 秒。
+# 审计：登录成败均输出结构化日志（时间/IP/账号/结果）。
+_LOGIN_FAILS: dict[str, list] = {}
+_LOGIN_MAX_FAILS = 5
+_LOGIN_LOCK_SECONDS = 60.0
+
+
+def _session_sign(payload: dict) -> str:
+    """签发会话令牌：base64url(payload).hex(hmac_sha256)。密钥由访问口令派生。"""
+    import base64
+    import hashlib
+    import hmac
+    import json as _json
+
+    settings_now = get_settings()
+    key = ("session|" + settings_now.review_access_code).encode()
+    body = base64.urlsafe_b64encode(_json.dumps(payload, separators=(",", ":")).encode()).decode()
+    sig = hmac.new(key, body.encode(), hashlib.sha256).hexdigest()
+    return f"{body}.{sig}"
+
+
+def _session_verify(token: str) -> bool:
+    """校验会话令牌：签名常量时间比较 + 有效期检查。任何异常一律判无效。"""
+    import base64
+    import hashlib
+    import hmac
+    import json as _json
+    import time as _time
+
+    try:
+        body, sig = token.split(".", 1)
+        settings_now = get_settings()
+        key = ("session|" + settings_now.review_access_code).encode()
+        expected = hmac.new(key, body.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return False
+        payload = _json.loads(base64.urlsafe_b64decode(body.encode()))
+        return float(payload.get("e", 0)) > _time.time()
+    except Exception:  # noqa: BLE001 畸形令牌一律 401，不外泄原因
+        return False
+
+
+@app.post("/api/login")
+async def review_login(request: Request) -> Response:
+    import hmac
+    import logging
+    import time as _time
+
+    from .ratelimit import client_ip, login_limiter
+
+    body = await request.json()
+    username = str(body.get("username", "")).strip()
+    password = str(body.get("password", "")).strip()
+    settings_now = get_settings()
+    expected_code = settings_now.review_access_code
+    expected_user = settings_now.review_username or "reviewer"
+    if not expected_code:
+        raise HTTPException(status_code=404, detail="当前实例未启用登录门禁")
+
+    ip = client_ip(request)
+    if not login_limiter.allow(ip):
+        logging.warning("audit login rate-limited ip=%s user=%s", ip, username)
+        raise HTTPException(
+            status_code=429,
+            detail="尝试次数过多，请稍后再试",
+            headers={"Retry-After": str(login_limiter.retry_after(ip))},
+        )
+    now = _time.time()
+    fails = _LOGIN_FAILS.get(ip)
+    if fails and fails[1] > now:
+        logging.warning("audit login locked ip=%s user=%s", ip, username)
+        raise HTTPException(status_code=429, detail="尝试次数过多，请一分钟后再试")
+
+    user_ok = hmac.compare_digest(username.encode(), expected_user.encode())
+    pass_ok = hmac.compare_digest(password.encode(), expected_code.encode())
+    if not (user_ok and pass_ok):
+        entry = _LOGIN_FAILS.get(ip, [0, 0.0])
+        entry[0] += 1
+        if entry[0] >= _LOGIN_MAX_FAILS:
+            entry = [0, now + _LOGIN_LOCK_SECONDS]
+        _LOGIN_FAILS[ip] = entry
+        logging.warning("audit login failure ip=%s user=%s fails=%d", ip, username, entry[0])
+        raise HTTPException(status_code=401, detail="账号或密码不正确")
+
+    _LOGIN_FAILS.pop(ip, None)
+    logging.info("audit login success ip=%s user=%s", ip, username)
+    token = _session_sign({"u": expected_user, "e": now + settings_now.review_session_ttl})
+    return JSONResponse({
+        "ok": True,
+        "username": expected_user,
+        "token": token,
+        "expires_in": settings_now.review_session_ttl,
+    })
 
 
 app.include_router(upload.router)
@@ -177,8 +284,36 @@ async def root() -> Response:
 
 if _DIST_READY:
     _ASSETS_DIR = _DIST_DIR / "assets"
-    if _ASSETS_DIR.is_dir():
-        app.mount("/assets", StaticFiles(directory=_ASSETS_DIR), name="assets")
+
+
+# ---------------------------------------------------------------------------
+# 静态资源 gzip + 缓存头（第十七轮，R-PERF-02）
+# ---------------------------------------------------------------------------
+# 只作用于 /assets（Vite 产物，文件名含哈希 → 内容不可变）：
+#  - gzip：主 JS 189 KB → 约 60 KB（评委首屏流量 −2/3）；文件是完整响应，
+#    一次性读入内存压缩（≤300 KB），不影响 SSE 流式接口（GZip 中间件会缓冲
+#    流式响应，故不做全局 gzip）；
+#  - Cache-Control: immutable——文件名带哈希，内容永不变，浏览器一年内免二次请求。
+# 注册顺序必须在 app.mount("/assets") 之前（Starlette 路由先注册先匹配）。
+@app.get("/assets/{file_path:path}", include_in_schema=False)
+async def gzipped_assets(request: Request, file_path: str) -> Response:
+    import gzip as _gzip
+    from mimetypes import guess_type
+
+    target = (_ASSETS_DIR / file_path).resolve()
+    if not str(target).startswith(str(_ASSETS_DIR.resolve())) or not target.is_file():
+        raise HTTPException(status_code=404, detail="Not Found")
+    data = target.read_bytes()
+    headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+    media_type = guess_type(target.name)[0] or "application/octet-stream"
+    if "gzip" in request.headers.get("accept-encoding", "") and len(data) > 1024:
+        data = _gzip.compress(data, 6)
+        headers["Content-Encoding"] = "gzip"
+    return Response(content=data, media_type=media_type, headers=headers)
+
+
+if _ASSETS_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=_ASSETS_DIR), name="assets")
 
     @app.get("/{full_path:path}", include_in_schema=False)
     async def spa_fallback(full_path: str) -> Response:
@@ -189,3 +324,6 @@ if _DIST_READY:
         if full_path.startswith("api/"):
             raise HTTPException(status_code=404, detail="Not Found")
         return FileResponse(_INDEX_HTML)
+
+
+

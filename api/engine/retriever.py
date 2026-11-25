@@ -20,7 +20,7 @@ from ..schemas import Clause
 
 
 class _Snippet:
-    __slots__ = ("id", "title", "section", "text", "vector", "norm")
+    __slots__ = ("id", "title", "section", "text", "vector", "norm", "doc_len")
 
     def __init__(self, id_: str, title: str, section: str, text: str) -> None:
         self.id = id_
@@ -29,6 +29,7 @@ class _Snippet:
         self.text = text
         self.vector = _bigrams(text)
         self.norm = math.sqrt(sum(v * v for v in self.vector.values())) or 1.0
+        self.doc_len = sum(self.vector.values()) or 1
 
 
 def _bigrams(text: str) -> Counter:
@@ -63,6 +64,8 @@ class RegulationRetriever:
         self._snippets: dict[str, list[_Snippet]] = {}
         self._chroma = None
         self._embedder = None
+        self._bm25_stats: tuple[int, Counter, float] | None = None
+        self._bm25_stats: tuple[int, Counter, float] | None = None
 
     # ------------------------------------------------------------------
     def load(self, contract_type: str) -> "RegulationRetriever":
@@ -117,15 +120,23 @@ class RegulationRetriever:
         return self._retrieve_tfidf(clause, snippets, top_k)
 
     # ------------------------------------------------------------------
-    @staticmethod
-    def _retrieve_tfidf(clause: Clause, snippets: list["_Snippet"], top_k: int) -> list[str]:
-        """纯 Python bigram TF-IDF 检索（默认路径，零依赖）。
+    # BM25 参数（第十五轮，R-RAG-01 对照实验实证后升级）
+    _BM25_K1 = 1.5
+    _BM25_B = 0.75
+
+    def _retrieve_tfidf(self, clause: Clause, snippets: list["_Snippet"], top_k: int) -> list[str]:
+        """纯 Python bigram TF-IDF 检索（默认路径，零依赖、确定性）。
+
+        第十五轮（R-RAG-01 检索器对照实验）结论：**维持 TF-IDF**。
+        盲评中 BM25 在决定性对局胜率 76.3%（`docs/检索器对照实验.md`），
+        但升级后端到端实测 F1 0.7240 → 0.6954（dev/holdout 同向下降）——
+        盲评衡量"片段与条款的语义匹配度"，TF-IDF 检出的规则性提示片段
+        对下游 LLM 判定更有效。以端到端 F1 为最终裁决，回滚 BM25。
+        实验脚本与负结果全部留档：scripts/retrieval_ab_test.py。
 
         性能优化（大赛实测项，331 条款基准）：
-        ① 复用 _Snippet 预计算的 norm —— 原实现走 _cosine，每个片段每次都要
-           重算 sqrt(sum(v²))，长合同下是纯浪费（片段向量恒定不变）；
-        ② 大集合预筛 —— 与查询无任何共同 bigram 的片段相似度必为 0，直接跳过，
-           避免无谓的点积（这些片段本来也会被 0.01 阈值过滤掉）。
+        ① 复用 _Snippet 预计算的 norm —— 片段向量恒定，避免重复计算；
+        ② 大集合预筛 —— 与查询无任何共同 bigram 的片段相似度必为 0，直接跳过。
         两项均为纯加速，不改变检索结果与排序语义。
         """
         qvec = _bigrams(clause.text)

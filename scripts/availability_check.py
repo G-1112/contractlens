@@ -45,10 +45,22 @@ def client(code: str = "") -> httpx.Client:
     return httpx.Client(trust_env=False, timeout=120, headers=headers)
 
 
+def q(base: str, path: str) -> str:
+    """拼接 URL：平台代理要求每个请求带 sharecode（2026-11-24 重新部署实测，
+    裸域名返回 403「链接不完整」页）；sharecode 从环境变量或 --sharecode 传入。"""
+    import os as _os
+
+    sc = _os.environ.get("SITES_SHARECODE", "").strip()
+    if not sc:
+        return base + path
+    sep = "&" if "?" in path else "?"
+    return base + path + f"{sep}sharecode={sc}"
+
+
 def upload(cl: httpx.Client, base: str, path: Path, ctype: str) -> str:
     with path.open("rb") as f:
         r = cl.post(
-            f"{base}/api/upload",
+            q(base, "/api/upload"),
             files={"file": (path.name, f, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")},
             data={"contract_type": ctype},
         )
@@ -64,10 +76,10 @@ def analyze(cl: httpx.Client, base: str, fid: str, ctype: str, budget_s: int = 1
     （初版把耗时记在轮询上，导致报告里出现「等待 0.0s」的假数据。）
     """
     t0 = time.perf_counter()
-    cl.post(f"{base}/api/analyze", json={"file_id": fid, "contract_type": ctype}, timeout=budget_s)
+    cl.post(q(base, "/api/analyze"), json={"file_id": fid, "contract_type": ctype}, timeout=budget_s)
     post_ms = (time.perf_counter() - t0) * 1000
     for _ in range(budget_s):
-        g = cl.get(f"{base}/api/result/{fid}")
+        g = cl.get(q(base, f"/api/result/{fid}"))
         if g.status_code == 200:
             # 注意：必须复用同一个 dict。g.json() 每次调用都会重新解析出一个新
             # 对象，写入后 return g.json() 会把刚加的键丢掉（初版因此误报 0.0s）。
@@ -97,7 +109,7 @@ def main() -> int:
     with client(args.code) as cl:
         # 1) 健康检查
         try:
-            h = cl.get(f"{base}/api/health", timeout=15).json()
+            h = cl.get(q(base, "/api/health"), timeout=15).json()
             rows.append(("健康检查", h.get("status") == "ok",
                          f"llm_enabled={h.get('llm_enabled')} model={h.get('llm_model')}"))
         except Exception as e:  # noqa: BLE001
@@ -108,7 +120,7 @@ def main() -> int:
 
         # 2) 前端页面 + 资源
         try:
-            idx = cl.get(f"{base}/", timeout=20)
+            idx = cl.get(q(base, "/"), timeout=20)
             html = idx.text
             has_root = "<div id=\"root\"" in html or 'id="root"' in html
             asset_ok = "/assets/" in html
@@ -122,7 +134,7 @@ def main() -> int:
         #    门禁误报成「未启用」（2026-10-31 实测踩到）。
         try:
             probe = cl.get(
-                f"{base}/api/result/probe",
+                q(base, "/api/result/probe"),
                 headers={"X-Review-Code": ""},
                 timeout=15,
             )
@@ -155,7 +167,7 @@ def main() -> int:
         ]:
             try:
                 t0 = time.perf_counter()
-                r = cl.get(f"{base}/api/report/{fid}", params={"format": fmt})
+                r = cl.get(q(base, f"/api/report/{fid}"), params={"format": fmt})
                 body = r.content
                 dt = (time.perf_counter() - t0) * 1000
                 ok = r.status_code == 200 and probe_ok(body)
@@ -166,7 +178,7 @@ def main() -> int:
 
         # 6) 追问对话
         try:
-            r = cl.post(f"{base}/api/chat",
+            r = cl.post(q(base, "/api/chat"),
                         json={"file_id": fid, "question": "第4条约定的年利率是否合法？请引用具体法条说明"},
                         timeout=90)
             d = r.json()
@@ -183,6 +195,39 @@ def main() -> int:
                          f"injection_flagged={rep2.get('injection_flagged')}"))
         except Exception as e:  # noqa: BLE001
             rows.append(("提示注入检出（R-INJ-01）", False, f"{type(e).__name__}: {e}"))
+
+        # 8) 登录接口（R-AUTH-02，第十四轮）：正确凭证 200 / 错误密码 401 / 错误账号 401
+        def _post_login(u: str, p: str):
+            r = cl.post(q(base, "/api/login"), json={"username": u, "password": p}, timeout=30)
+            return r.status_code, (r.json() if r.status_code == 200 else r.json().get("detail", ""))
+
+        try:
+            st, body = _post_login("reviewer", args.code)
+            tok = body.get("token", "") if isinstance(body, dict) else ""
+            # 第十六轮：token 应为 HMAC 会话令牌（含签名分隔点、非明文口令）
+            ok = st == 200 and "." in tok and tok != args.code
+            rows.append(("登录·正确凭证（会话令牌）", ok,
+                         f"HTTP {st} / {'会话令牌' if ok else 'token 异常'}"))
+        except Exception as e:  # noqa: BLE001
+            rows.append(("登录·正确凭证（会话令牌）", False, f"{type(e).__name__}: {e}"))
+        try:
+            _, body = _post_login("reviewer", args.code)
+            tok = body.get("token", "") if isinstance(body, dict) else ""
+            pr = cl.get(q(base, "/api/result/__probe__"), headers={"X-Review-Session": tok}, timeout=30)
+            rows.append(("会话令牌过门禁", pr.status_code == 404,
+                         f"HTTP {pr.status_code}（404=通过门禁）"))
+        except Exception as e:  # noqa: BLE001
+            rows.append(("会话令牌过门禁", False, f"{type(e).__name__}: {e}"))
+        try:
+            st, detail = _post_login("reviewer", "wrong-password")
+            rows.append(("登录·错误密码拒绝", st == 401, f"HTTP {st} / {detail}"))
+        except Exception as e:  # noqa: BLE001
+            rows.append(("登录·错误密码拒绝", False, f"{type(e).__name__}: {e}"))
+        try:
+            st, detail = _post_login("hacker", args.code)
+            rows.append(("登录·错误账号拒绝", st == 401, f"HTTP {st} / {detail}"))
+        except Exception as e:  # noqa: BLE001
+            rows.append(("登录·错误账号拒绝", False, f"{type(e).__name__}: {e}"))
 
     return _emit(rows, ts, args, base)
 
