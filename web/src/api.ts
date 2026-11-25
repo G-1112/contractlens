@@ -211,11 +211,16 @@ export async function generateScript(
 }
 
 /** 追问对话：基于已生成的审查报告回答问题，返回带 sources/trace 的结构化响应。 */
-export async function chat(fileId: string, question: string): Promise<ChatResponse> {
+/** 追问对话（第十九轮支持多轮）：history 传最近数轮问答，支持指代消解。 */
+export async function chat(
+  fileId: string,
+  question: string,
+  history: { q: string; a: string }[] = [],
+): Promise<ChatResponse> {
   const res = await fetch(`${BASE}/chat`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
-    body: JSON.stringify({ file_id: fileId, question }),
+    body: JSON.stringify({ file_id: fileId, question, history }),
   });
   await ensureOk(res);
   return res.json();

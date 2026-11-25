@@ -89,7 +89,20 @@ export default function ChatPanel({ fileId }: { fileId: string }) {
     setMessages((ms) => [...ms, { role: "user", text: question }]);
     setLoading(true);
     try {
-      const r = await chat(fileId, question);
+      const r = await chat(
+          fileId,
+          question,
+          // 第十九轮多轮追问：携带最近 3 轮问答（服务器再截断清洗）
+          (() => {
+            const pairs: { q: string; a: string }[] = [];
+            for (let i = 0; i < messages.length - 1; i++) {
+              if (messages[i].role === "user" && messages[i + 1].role === "assistant") {
+                pairs.push({ q: messages[i].text, a: messages[i + 1].text });
+              }
+            }
+            return pairs.slice(-3);
+          })(),
+        );
       setMode(r.mode);
       setMessages((ms) => [...ms, { role: "assistant", text: r.answer, response: r }]);
     } catch (e) {

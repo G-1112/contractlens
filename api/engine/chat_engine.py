@@ -166,6 +166,7 @@ class ChatAgent:
         clauses: list[Clause],
         report: AnalysisReport | None,
         contract_type: str,
+        history: list[tuple[str, str]] | None = None,
     ) -> ChatResponse:
         trace: list[str] = []
         sources: list[ChatSource] = []
@@ -205,7 +206,7 @@ class ChatAgent:
                 )
             )
 
-        answer = await self._generate(question, hits, regs, risks, contract_type, clauses)
+        answer = await self._generate(question, hits, regs, risks, contract_type, clauses, history=history)
         mode = "llm" if getattr(self.llm, "_client", None) else "mock"
         if mode == "mock":
             trace.append("生成方式：mock 确定性模板（未配置 LLM Key），引用内容均为真实检索结果")
@@ -227,6 +228,7 @@ class ChatAgent:
         risks: list[Any],
         contract_type: str,
         clauses: list[Clause],
+        history: list[tuple[str, str]] | None = None,
     ) -> str:
         """生成回答：优先 LLM（受限上下文），失败/未配置则用确定性模板。"""
         clause_ctx = "\n".join(
@@ -237,7 +239,18 @@ class ChatAgent:
             f"- {it.risk_type}（等级 {it.final_level}）：{it.explain}" for it in risks
         ) or "（该条款暂无风险判定）"
 
+        hist_ctx = ""
+        if history:
+            turns = "\n".join(
+                f"问{i}: {q}\n答{i}: {a}" for i, (q, a) in enumerate(history, 1)
+            )
+            hist_ctx = (
+                f"【最近对话】\n{turns}\n\n"
+                f"（若本轮问题中的指代（它/这条/该条款）指向上一轮讨论的对象，"
+                f"请沿用其条款定位回答）\n\n"
+            )
         user_prompt = (
+            f"{hist_ctx}"
             f"【合同原文片段】\n{clause_ctx}\n\n"
             f"【已判定的风险】\n{risk_ctx}\n\n"
             f"【参考法规片段】\n{reg_ctx}\n\n"

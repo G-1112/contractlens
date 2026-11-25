@@ -143,9 +143,19 @@ class ChatSource(BaseModel):
     text: str = ""
 
 
+class ChatTurn(BaseModel):
+    """追问对话历史一轮（第十九轮，R-CHAT-02 多轮追问）。"""
+
+    q: str
+    a: str
+
+
 class ChatRequest(BaseModel):
     file_id: str
     question: str
+    # 多轮上下文：客户端持有并回传最近数轮；服务端只保留最近 3 轮、
+    # 单条截断 500 字，防止提示词膨胀。缺省为空（兼容单轮旧客户端）。
+    history: list[ChatTurn] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):

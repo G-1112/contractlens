@@ -54,4 +54,10 @@ async def chat(req: ChatRequest, request: Request) -> ChatResponse:
     contract_type = report.contract_type if report else (doc.contract_type if doc else "rent")
 
     agent = ChatAgent()
-    return await agent.ask(question, clauses, report, contract_type)
+    # 多轮追问（第十九轮）：只保留最近 3 轮、单条截 500 字，防提示词膨胀
+    history = [
+        (t.q.strip()[:500], t.a.strip()[:500])
+        for t in (req.history or [])[-3:]
+        if t.q.strip() and t.a.strip()
+    ]
+    return await agent.ask(question, clauses, report, contract_type, history=history)
